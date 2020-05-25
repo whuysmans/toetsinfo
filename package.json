@@ -15,16 +15,17 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+	 "test": "echo \"Error: no test specified\" && exit 1",
+	 "start": "node index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/whuysmans/recalculatescores.git"
+    "url": "git+https://github.com/whuysmans/questions2pdf.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/whuysmans/recalculatescores/issues"
+    "url": "https://github.com/whuysmans/questions2pdf/issues"
   },
-  "homepage": "https://github.com/whuysmans/recalculatescores#readme"
+  "homepage": "https://github.com/whuysmans/questions2pdf#readme"
 }
