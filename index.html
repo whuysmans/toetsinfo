@@ -1,0 +1,38 @@
+<!doctype html>
+<html class="no-js" lang="nl-BE">
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="css/main.css">
+	</head>
+
+	<body>
+
+		<p>Recalculate the scores!</p>
+		<form action="/test" method="get" class="form-example">
+			<div>
+				<label for="token">Access token:</label>
+				<input type="text" id="token" name="token" required minlength="40" maxlength="256" size="100">
+			</div>
+			<div>
+				<label for="course">course ID:</label>
+				<input type="text" id="course" name="course" required minlength="4" maxlength="8" size="10">
+			</div>
+			<div>
+				<label for="assignment">assignment or quiz ID:</label>
+				<input type="text" id="assignment" name="assignment" required minlength="4" maxlength="8" size="10">
+			</div>
+			<div>
+				<button type="submit">Submit</button>
+			</div>
+		</form>
+		
+		
+
+
+	</body>
+
+</html>
+
