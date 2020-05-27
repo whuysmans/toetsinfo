@@ -1,0 +1,25 @@
+*, *:before, *:after {
+	box-sizing: border-box;
+}
+
+input {
+	width: 20%
+}
+
+input[type=text] {
+	padding: 10px;
+	margin: 10px 0;
+	border: 1px solid gray;
+	border-radius: 2px;
+}
+
+button {
+	padding: 10px;
+	font-weight: 600;
+	width: 10%;
+	border-radius: 2px;
+}
+
+div.form {
+	text-align: center;
+}

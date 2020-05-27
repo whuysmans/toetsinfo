@@ -1,0 +1,33 @@
+<!doctype html>
+<html class="no-js" lang="nl-BE">
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="css/styles.css">
+	</head>
+
+	<body>
+
+		
+		<div class="form">
+			<p class="form">Export quiz questions to pdf. Only works with classic Canvas quizzes!</p>
+			<form action="/test" method="get" class="form-example">
+				<div>
+					<label for="course">course ID:</label>
+					<input type="text" id="course" name="course" required minlength="4" maxlength="8" size="10">
+				</div>
+				<div>
+					<label for="assignment"></label>quiz ID:</label>
+					<input type="text" id="assignment" name="assignment" required minlength="4" maxlength="8" size="10">
+				</div>
+				<div>
+					<button type="submit">Submit</button>
+				</div>
+			</form>
+		</div>
+		
+	</body>
+</html>
+
