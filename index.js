@@ -144,7 +144,7 @@ app.listen( port, () => {
 	console.log( `listening on port ${ port }` )
 	oauth2 = require('simple-oauth2').create( credentials )
 	authorizationUri = oauth2.authorizationCode.authorizeURL({
-		redirect_uri: 'https://questions2pdf.herokuapp.com:3000/callback',
+		redirect_uri: 'https://questions2pdf.herokuapp.com/callback',
 		scope: '',
 		state: 'xyxyzzx'
 	})
