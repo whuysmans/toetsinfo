@@ -155,7 +155,7 @@ app.listen( port, () => {
 		// redirect_uri: 'http://localhost:3000/callback',
 		redirect_uri: `${ process.env.APPURL }/callback`,
 		scope: '',
-		state: 'xyxyzzx'
+		state: state 
 	})
 } )
 
