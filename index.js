@@ -10,7 +10,7 @@ const PDFDocument = require('pdfkit')
 const fs = require('fs')
 const path = require('path')
 const parse = require('parse-link-header')
-// TODO put these in Heroku process.ENV
+let state = ''
 const credentials = {
 	client: {
 		id: process.env.CLIENTID,
@@ -47,6 +47,9 @@ app.get('/callback', async ( req, res ) => {
 		const result = await oauth2.authorizationCode.getToken( options )
 		const tokenObj = oauth2.accessToken.create( result )
 		token = tokenObj.token.access_token
+		if ( req.query.state !== state ) {
+			return res.sendStatus(401)
+		}
 		console.log( 'token', token )
 		// everything ok? go to start
 		res.redirect('/start')
@@ -81,6 +84,10 @@ const generateQuestionRow = ( doc, question ) => {
 const generateSpace = ( doc ) => {
 	doc
 		.text( `\n\n` )
+}
+
+const getRandomIdent = () {
+	return Math.random().toString(36).substring(4)
 }
 
 // on form submit, launch the Canvas API request
@@ -142,6 +149,7 @@ app.get('/test', [
 // TODO state and scope
 app.listen( port, () => {
 	console.log( `listening on port ${ port }` )
+	state = getRandomIdent()
 	oauth2 = require('simple-oauth2').create( credentials )
 	authorizationUri = oauth2.authorizationCode.authorizeURL({
 		// redirect_uri: 'http://localhost:3000/callback',
