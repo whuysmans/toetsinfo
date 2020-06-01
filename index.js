@@ -86,7 +86,7 @@ const generateSpace = ( doc ) => {
 		.text( `\n\n` )
 }
 
-const getRandomIdent = () {
+const getRandomIdent = () => {
 	return Math.random().toString(36).substring(4)
 }
 
