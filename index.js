@@ -154,7 +154,7 @@ app.listen( port, () => {
 	authorizationUri = oauth2.authorizationCode.authorizeURL({
 		// redirect_uri: 'http://localhost:3000/callback',
 		redirect_uri: `${ process.env.APPURL }/callback`,
-		scope: '',
+		scope: `url:GET|/api/v1/courses/:course_id/quizzes/:quiz_id/questions`,
 		state: state 
 	})
 } )
