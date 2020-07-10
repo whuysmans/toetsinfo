@@ -68,17 +68,21 @@ const createAnswerRow = ( doc, answer, type ) => {
 	doc
 		.fontSize( 9 )
 		.text( type === 'fill_in_multiple_blanks_question' ?
-			`${ answer.text } (${ answer.blank_id })\n` :
-			`${ answer.text }\n`, {
+			`${ stripHTML( answer.text ) } (${ answer.blank_id })\n` :
+			`${ stripHTML( answer.text ) }\n`, {
 				indent: 10
 			}	
 		)
 }
 
+const stripHTML = ( html ) => {
+	return html.replace( /<\/?[^>]+(>|$)/g, "" )
+}
+
 const generateQuestionRow = ( doc, question ) => {
 	doc
 		.fontSize( 12 )
-		.text( `${ question.question_text }\n\n` )
+		.text( `${ stripHTML( question.question_text ) }\n\n` )
 }
 
 const generateSpace = ( doc ) => {
