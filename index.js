@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 let port = process.env.PORT || 3000
 const axios = require('axios')
-let school = process.env.SCHOOL
+let school = process.env.SCHOOL || 'https://canvas.kdg.be'
 let quizID = 0
 let courseID = 0
 let token = '' 
@@ -10,16 +10,15 @@ const fs = require('fs')
 const path = require('path')
 const parse = require('parse-link-header')
 const wkhtmltopdf = require('wkhtmltopdf')
-const { exec } = require('child_process')
 let state = ''
 let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 const credentials = {
 	client: {
-		id: process.env.CLIENTID,
-		secret: process.env.SECRET
+		id: process.env.CLIENTID || '124000000000000046',
+		secret: process.env.SECRET || 'fD0yA6FzZsiuFFKJRUJtLxOkh5986i5sFHXp4kyrDPVtAjPqVgTa8spe12vwuTx0'
 	},
 	auth: {
-		tokenHost: process.env.SCHOOL,
+		tokenHost: process.env.SCHOOL || 'https://canvas.kdg.be',
 		authorizePath: '/login/oauth2/auth',
 		tokenPath: '/login/oauth2/token'
 	}
@@ -199,7 +198,7 @@ app.get('/test', [
 					'Authorization': `Bearer ${ token }`
 				}
 			})
-			// console.log( response.headers )
+			console.log( response.headers )
 			let questions = response.data
 			questions.map( ( question ) => {
 				result.push( question )
@@ -221,10 +220,8 @@ app.get('/test', [
 		} )
 		html += '</body></html>'
 		const ts = new Date().getTime()
-		// const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
-		const outFile = `/app/tmp/quiz-printout-${ ts }.pdf`
-		const tmpFile = `/app/tmp/quiz-printout-${ ts }.html`
-		await createHTML( html, tmpFile, outFile )
+		const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
+		await createHTML( html, outFile )
 		res.download( outFile )
 		html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 	} catch ( err ) {
@@ -232,42 +229,20 @@ app.get('/test', [
 	}
 } )
 
-function createHTML ( str, tmpFile, outFile ) {
-	// console.log( file )
-	// return new Promise ( ( resolve, reject ) => {
-	// 	wkhtmltopdf( str, {
-	// 		pageSize: 'letter',
-	// 		encoding: 'utf-8',
-	// 		output: file
-	// 	} , ( err, stream ) => {
-	// 		if ( err ) {
-	// 			reject( err )
-	// 		} else {
-	// 			resolve()
-	// 		}
-	// 	})
-	// } )
-	fs.writeFile( tmpFile, str, ( err ) => {
-		if ( err ) return console.log( err )
-	} )
+function createHTML ( str, file ) {
+	console.log( file )
 	return new Promise ( ( resolve, reject ) => {
-		// const options = { 
-		// 	pageSize: 'letter',
-		// 	encoding: 'utf-8',
-		// 	output: file 
-		// }
-		exec( `/app/bin/wkhtmltopdf "${ tmpFile }" "${ outFile }"`, (error, stdout, stderr) => {
-			if (error) {
-				 console.log(`error: ${error.message}`);
-				 return reject()
+		wkhtmltopdf( str, {
+			pageSize: 'letter',
+			encoding: 'utf-8',
+			output: file
+		} , ( err, stream ) => {
+			if ( err ) {
+				reject( err )
+			} else {
+				resolve()
 			}
-			if (stderr) {
-				 console.log(`stderr: ${stderr}`);
-				 return reject()
-			}
-			console.log(`stdout: ${stdout}`);
-			return resolve()
-	  	} )
+		})
 	} )
 }
 
@@ -281,10 +256,12 @@ app.get( '/logout', async ( req, res ) => {
 // on app creation, set the oauth2 parameters
 // TODO state and scope
 app.listen( port, () => {
+	console.log( `click here: http://localhost:3000` )
 	state = getRandomIdent()
 	oauth2 = require('simple-oauth2').create( credentials )
 	authorizationUri = oauth2.authorizationCode.authorizeURL({
-		redirect_uri: `${ process.env.APPURL }/callback`,
+		redirect_uri: 'http://localhost:3000/callback',
+		//redirect_uri: `${ process.env.APPURL }/callback`,
 		scope: `url:GET|/api/v1/courses/:course_id/quizzes/:quiz_id/questions`,
 		state: state 
 	})
