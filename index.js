@@ -247,7 +247,9 @@ function createHTML ( str, tmpFile, outFile ) {
 	// 		}
 	// 	})
 	// } )
-	fs.writeFile( tmpFile, str )
+	fs.writeFile( tmpFile, str, ( err ) => {
+		if ( err ) return console.log( err )
+	} )
 	return new Promise ( ( resolve, reject ) => {
 		const options = { 
 			pageSize: 'letter',
