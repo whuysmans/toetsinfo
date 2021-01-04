@@ -251,7 +251,7 @@ function createHTML ( str, file ) {
 			encoding: 'utf-8',
 			output: file 
 		}
-		exec( `/app/bin/wkhtmltopdf "${ str }" "${ options }"`, (error, stdout, stderr) => {
+		exec( `/app/bin/wkhtmltopdf "${ str }" "${ file }"`, (error, stdout, stderr) => {
 			if (error) {
 				 console.log(`error: ${error.message}`);
 				 return;
