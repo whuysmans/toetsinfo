@@ -10,7 +10,7 @@ const fs = require('fs')
 const path = require('path')
 const parse = require('parse-link-header')
 const wkhtmltopdf = require('wkhtmltopdf')
-const exec = require('child_process')
+const { exec } = require('child_process')
 let state = ''
 let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 const credentials = {
