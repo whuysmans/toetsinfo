@@ -199,7 +199,7 @@ app.get('/test', [
 					'Authorization': `Bearer ${ token }`
 				}
 			})
-			console.log( response.headers )
+			// console.log( response.headers )
 			let questions = response.data
 			questions.map( ( question ) => {
 				result.push( question )
@@ -252,7 +252,7 @@ function createHTML ( str, file ) {
 			encoding: 'utf-8',
 			output: file 
 		}
-		exec( `cat "${ str }" | /app/bin/wkhtmltopdf - "${ file }"`, (error, stdout, stderr) => {
+		exec( `echo "${ str }" | /app/bin/wkhtmltopdf - "${ file }"`, (error, stdout, stderr) => {
 			if (error) {
 				 console.log(`error: ${error.message}`);
 				 return;
