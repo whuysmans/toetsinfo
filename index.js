@@ -221,7 +221,8 @@ app.get('/test', [
 		} )
 		html += '</body></html>'
 		const ts = new Date().getTime()
-		const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
+		// const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
+		const outFile = `quiz-printout-${ ts }.pdf`
 		await createHTML( html, outFile )
 		res.download( outFile )
 		html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
