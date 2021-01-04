@@ -10,6 +10,7 @@ const fs = require('fs')
 const path = require('path')
 const parse = require('parse-link-header')
 const wkhtmltopdf = require('wkhtmltopdf')
+const exec = require('child_process')
 let state = ''
 let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 const credentials = {
@@ -231,18 +232,36 @@ app.get('/test', [
 
 function createHTML ( str, file ) {
 	console.log( file )
+	// return new Promise ( ( resolve, reject ) => {
+	// 	wkhtmltopdf( str, {
+	// 		pageSize: 'letter',
+	// 		encoding: 'utf-8',
+	// 		output: file
+	// 	} , ( err, stream ) => {
+	// 		if ( err ) {
+	// 			reject( err )
+	// 		} else {
+	// 			resolve()
+	// 		}
+	// 	})
+	// } )
 	return new Promise ( ( resolve, reject ) => {
-		wkhtmltopdf( str, {
+		const options = { 
 			pageSize: 'letter',
 			encoding: 'utf-8',
-			output: file
-		} , ( err, stream ) => {
-			if ( err ) {
-				reject( err )
-			} else {
-				resolve()
+			output: file 
+		}
+		exec( `/app/bin/wkhtmltopdf "${ str }" "${ options }"`, (error, stdout, stderr) => {
+			if (error) {
+				 console.log(`error: ${error.message}`);
+				 return;
 			}
-		})
+			if (stderr) {
+				 console.log(`stderr: ${stderr}`);
+				 return;
+			}
+			console.log(`stdout: ${stdout}`);
+	  	} )
 	} )
 }
 
