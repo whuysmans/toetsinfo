@@ -222,8 +222,8 @@ app.get('/test', [
 		html += '</body></html>'
 		const ts = new Date().getTime()
 		// const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
-		const outFile = `quiz-printout-${ ts }.pdf`
-		const tmpFile = `quiz-printout-${ ts }.html`
+		const outFile = `/app/tmp/quiz-printout-${ ts }.pdf`
+		const tmpFile = `/app/tmp/quiz-printout-${ ts }.html`
 		await createHTML( html, tmpFile, outFile )
 		res.download( outFile )
 		html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
@@ -256,7 +256,7 @@ function createHTML ( str, tmpFile, outFile ) {
 		// 	encoding: 'utf-8',
 		// 	output: file 
 		// }
-		exec( `/app/bin/wkhtmltopdf "/app/${ tmpFile }" "${ outFile }"`, (error, stdout, stderr) => {
+		exec( `/app/bin/wkhtmltopdf "${ tmpFile }" "${ outFile }"`, (error, stdout, stderr) => {
 			if (error) {
 				 console.log(`error: ${error.message}`);
 				 return reject()
