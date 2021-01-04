@@ -251,11 +251,11 @@ function createHTML ( str, tmpFile, outFile ) {
 		if ( err ) return console.log( err )
 	} )
 	return new Promise ( ( resolve, reject ) => {
-		const options = { 
-			pageSize: 'letter',
-			encoding: 'utf-8',
-			output: file 
-		}
+		// const options = { 
+		// 	pageSize: 'letter',
+		// 	encoding: 'utf-8',
+		// 	output: file 
+		// }
 		exec( `/app/bin/wkhtmltopdf "/app/${ tmpFile }" "${ outFile }"`, (error, stdout, stderr) => {
 			if (error) {
 				 console.log(`error: ${error.message}`);
