@@ -11,11 +11,12 @@
     "express-validator": "^6.5.0",
     "file-saver": "^2.0.2",
     "fs": "0.0.1-security",
+    "get-port": "^5.1.1",
     "parse-link-header": "^1.0.1",
     "pdfkit": "^0.11.0",
-    "simple-oauth2": "^3.4.0"
+    "simple-oauth2": "^3.4.0",
+    "wkhtmltopdf": "^0.3.4"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
