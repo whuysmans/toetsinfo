@@ -247,7 +247,7 @@ function createHTML ( str, tmpFile, outFile ) {
 	// 		}
 	// 	})
 	// } )
-	fs.writeFile( tmpFile, str, 'utf-8' )
+	fs.writeFile( tmpFile, str )
 	return new Promise ( ( resolve, reject ) => {
 		const options = { 
 			pageSize: 'letter',
@@ -257,13 +257,14 @@ function createHTML ( str, tmpFile, outFile ) {
 		exec( `/app/bin/wkhtmltopdf "/app/${ tmpFile }" "${ outFile }"`, (error, stdout, stderr) => {
 			if (error) {
 				 console.log(`error: ${error.message}`);
-				 return;
+				 return reject()
 			}
 			if (stderr) {
 				 console.log(`stderr: ${stderr}`);
-				 return;
+				 return reject()
 			}
 			console.log(`stdout: ${stdout}`);
+			return resolve()
 	  	} )
 	} )
 }
