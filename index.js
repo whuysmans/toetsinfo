@@ -224,7 +224,7 @@ app.get('/test', [
 		// const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
 		const outFile = `quiz-printout-${ ts }.pdf`
 		const tmpFile = `quiz-printout-${ ts }.html`
-		await createHTML( str, tmpFile, outFile )
+		await createHTML( html, tmpFile, outFile )
 		res.download( outFile )
 		html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 	} catch ( err ) {
