@@ -23,10 +23,21 @@
 					<input type="text" id="assignment" name="assignment" required minlength="1" maxlength="8" size="10">
 				</div>
 				<div>
-					<button type="submit">Submit</button>
+					<span><button type="submit">Submit</button></span>
+					<span><button id="logoutButton" type="submit">Logout</button></span>
 				</div>
 			</form>
 		</div>
+		<script>
+			window.onload = () => {
+				const logoutBtn = document.querySelector('#logoutButton')
+				logoutBtn.addEventListener( 'click', async ( event ) => {
+				event.preventDefault()
+				fetch( '/logout' )
+				window.location.href = '/'
+				} )
+			}
+		</script>
 		
 	</body>
 </html>

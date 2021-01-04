@@ -6,11 +6,12 @@ let school = process.env.SCHOOL
 let quizID = 0
 let courseID = 0
 let token = '' 
-const PDFDocument = require('pdfkit')
 const fs = require('fs')
 const path = require('path')
 const parse = require('parse-link-header')
+const wkhtmltopdf = require('wkhtmltopdf')
 let state = ''
+let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 const credentials = {
 	client: {
 		id: process.env.CLIENTID,
@@ -64,30 +65,107 @@ app.get('/start', ( req, res ) => {
 	res.sendFile( path.join( __dirname + '/start.html' ) )
 } )
 
-const createAnswerRow = ( doc, answer, type ) => {
-	doc
-		.fontSize( 9 )
-		.text( type === 'fill_in_multiple_blanks_question' ?
-			`${ stripHTML( answer.text ) } (${ answer.blank_id })\n` :
-			`${ stripHTML( answer.text ) }\n`, {
-				indent: 10
-			}	
-		)
+const createShortAnswer = ( answers ) => {
+	let tempHtml = '<p>'
+	answers.forEach( ( answer ) => {
+		tempHtml += `<span style="margin-right: 10px;">${ answer.text }</span>`
+	} )
+	tempHtml += '</p>'
+	return tempHtml
 }
 
-const stripHTML = ( html ) => {
-	return html.replace( /<\/?[^>]+(>|$)/g, "" )
+const createMultipeDropdownOrFillTheBlanksAnswer = ( answers ) => {
+	let blankIds = new Set()
+	let tempHtml = '<p>'
+	answers.forEach( ( answer ) => {
+		blankIds.add( answer.blank_id )
+	} )
+	for ( let item of blankIds ) {
+		const rowItems = answers.filter( ( answer ) => {
+			return answer.blank_id === item
+		} )
+		tempHtml += `${ item }: `
+		rowItems.forEach( ( rowItem ) => {
+			tempHtml += rowItem.weight === 100 && rowItem.question_type === 'multiple_dropdowns_question' ? `<span style="margin-right: 10px;"> ${ rowItem.text }* </span>` :
+			`<span style="margin-right: 10px;"> ${ rowItem.text } </span>`
+		} )
+		tempHtml += '<br />'
+	}
+	tempHtml += '</p>'
+	return tempHtml
 }
 
-const generateQuestionRow = ( doc, question ) => {
-	doc
-		.fontSize( 12 )
-		.text( `${ stripHTML( question.question_text ) }\n\n` )
+const createMatchingAnswer = ( answers ) => {
+	let tempHtml = '<p>'
+	answers.forEach( ( answer ) => {
+		tempHtml += `<p><span style="margin-right: 5px;">${ answer.left }</span> -----  <span style="margin-left: 5px;">${ answer.right }</span></p>`
+	} )
+	tempHtml += '</p>'
+	return tempHtml
 }
 
-const generateSpace = ( doc ) => {
-	doc
-		.text( `\n\n` )
+const createMCOrMRAnswer = ( answers ) => {
+	let tempHtml = '<p>'
+	answers.forEach( ( answer ) => {
+		tempHtml += answer.weight === 100 ? `${ answer.text }*<br />` :
+			`${ answer.text }<br />`
+	} )
+	tempHtml += '</p>'
+	return tempHtml
+}
+
+const createTrueFalseAnswer = ( answers ) => {
+	let tempHtml = '<p>'
+	answers.forEach( ( answer ) => {
+		tempHtml += answer.weight === 100 ? `${ answer.text }*<br />`:
+			`${ answer.text }<br />`
+	} )
+	tempHtml += '</p>'
+	return tempHtml
+}
+
+const createNumericalAnswer = ( answers ) => {
+	let tempHtml = '<p>'
+	answers.forEach( ( answer ) => {
+		tempHtml += answer.numerical_answer_type === 'range_answer' && answer.weight === 100 ?
+			`between ${ answer.start } and ${ answer.end }` :
+			answer.weight === 100 && answer.numerical_answer_type === 'exact_answer' ? `${ answer.exact } with margin ${ answer.margin }` : ''
+	} )
+	tempHtml += '</p>'
+	return tempHtml
+}
+
+const createAnswerBlock = ( answers, type ) => {
+	switch ( type ) {
+		case 'multiple_dropdowns_question':
+			return createMultipeDropdownOrFillTheBlanksAnswer( answers )
+		case 'fill_in_multiple_blanks_question':
+			return createMultipeDropdownOrFillTheBlanksAnswer( answers )
+		case 'short_answer_question':
+			return createShortAnswer( answers )
+		case 'matching_question':
+			return createMatchingAnswer( answers )
+		case 'multiple_choice_question':
+			return createMCOrMRAnswer( answers )
+		case 'multiple_answers_question':
+			return createMCOrMRAnswer( answers )
+		case 'true_false_question':
+			return createTrueFalseAnswer( answers )
+		case 'numerical_question':
+			return createNumericalAnswer( answers )
+		case 'essay_question':
+			return '<p>answer for essay question here</p>'
+		default:
+			return '<p></p>'
+	}
+}
+
+const generateQuestionRow = ( question ) => {
+	html += `<div style="padding: 5px">${ question.question_text }</div>`
+}
+
+const generateSpace = () => {
+	html += '<hr><br /><br />'
 }
 
 const getRandomIdent = () => {
@@ -96,9 +174,9 @@ const getRandomIdent = () => {
 
 // on form submit, launch the Canvas API request
 app.get('/test', [
-	check( 'course' ).isLength({ min: 4, max: 10 }),
+	check( 'course' ).isLength({ min: 1, max: 10 }),
 	check( 'course' ).isNumeric(),
-	check( 'assignment' ).isLength({ min: 4, max: 10 }),
+	check( 'assignment' ).isLength({ min: 2, max: 10 }),
 	check( 'assignment' ).isNumeric()
 ], async ( req, res ) => {
 	const errors = validationResult( req )
@@ -120,6 +198,7 @@ app.get('/test', [
 					'Authorization': `Bearer ${ token }`
 				}
 			})
+			console.log( response.headers )
 			let questions = response.data
 			questions.map( ( question ) => {
 				result.push( question )
@@ -132,31 +211,54 @@ app.get('/test', [
 				quizURL = parsed.next.url
 			}
 		}
-		const doc = new PDFDocument
-		let str = 'Questions for this Quiz\n\n'
+		html += '<p>Questions for this Quiz</p>'
 		result.map( ( questionBlock ) => {
 			let item = {}
-			generateQuestionRow( doc, questionBlock )
-			questionBlock.answers.map( ( answer ) => {
-				createAnswerRow( doc, answer, questionBlock.question_type )
-			} )
-			generateSpace( doc )
+			generateQuestionRow( questionBlock )
+			html += createAnswerBlock( questionBlock.answers, questionBlock.question_type )
+			generateSpace()
 		} )
-		doc.pipe( res )
-		doc.end()
+		html += '</body></html>'
+		const ts = new Date().getTime()
+		const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
+		await createHTML( html, outFile )
+		res.download( outFile )
+		html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 	} catch ( err ) {
 		console.log( err )
 	}
 } )
 
+function createHTML ( str, file ) {
+	console.log( file )
+	return new Promise ( ( resolve, reject ) => {
+		wkhtmltopdf( str, {
+			pageSize: 'letter',
+			encoding: 'utf-8',
+			output: file
+		} , ( err, stream ) => {
+			if ( err ) {
+				reject( err )
+			} else {
+				resolve()
+			}
+		})
+	} )
+}
+
+app.get( '/logout', async ( req, res ) => {
+	let logoutURL = `${ school }/login/oauth2/token`
+	console.log( logoutURL )
+	await axios.delete( logoutURL, { headers: { 'Authorization': `Bearer ${ token }`	} } )
+	token = ''
+} )
+
 // on app creation, set the oauth2 parameters
 // TODO state and scope
 app.listen( port, () => {
-	console.log( `listening on port ${ port }` )
 	state = getRandomIdent()
 	oauth2 = require('simple-oauth2').create( credentials )
 	authorizationUri = oauth2.authorizationCode.authorizeURL({
-		// redirect_uri: 'http://localhost:3000/callback',
 		redirect_uri: `${ process.env.APPURL }/callback`,
 		scope: `url:GET|/api/v1/courses/:course_id/quizzes/:quiz_id/questions`,
 		state: state 
