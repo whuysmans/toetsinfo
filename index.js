@@ -231,7 +231,17 @@ app.get('/test', [
 
 async function createHTML ( str, file, res ) {
 	console.log( file )
-	const browser = await puppeteer.launch()
+	const chromeOptions = {
+		headless: true,
+		defaultViewport: null,
+		args: [
+			 "--incognito",
+			 "--no-sandbox",
+			 "--single-process",
+			 "--no-zygote"
+		],
+  }
+	const browser = await puppeteer.launch( chromeOptions )
 	const page = await browser.newPage()
 	await page.setContent( str )
 	await page.pdf( { path: file, format: 'A4' } )
