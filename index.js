@@ -9,6 +9,7 @@ let token = ''
 const fs = require('fs')
 const path = require('path')
 const parse = require('parse-link-header')
+const puppeteer = require('puppeteer')
 const wkhtmltopdf = require('wkhtmltopdf')
 let state = ''
 let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
@@ -221,29 +222,22 @@ app.get('/test', [
 		html += '</body></html>'
 		const ts = new Date().getTime()
 		const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
-		await createHTML( html, outFile )
-		res.download( outFile )
+		await createHTML( html, outFile, res )
+		// res.download( outFile )
 		html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 	} catch ( err ) {
 		console.log( err )
 	}
 } )
 
-function createHTML ( str, file ) {
+async function createHTML ( str, file, res ) {
 	console.log( file )
-	return new Promise ( ( resolve, reject ) => {
-		wkhtmltopdf( str, {
-			pageSize: 'letter',
-			encoding: 'utf-8',
-			output: file
-		} , ( err, stream ) => {
-			if ( err ) {
-				reject( err )
-			} else {
-				resolve()
-			}
-		})
-	} )
+	const browser = await puppeteer.launch()
+	const page = await browser.newPage()
+	await page.setContent( str )
+	await page.pdf( { path: file, format: 'A4' } )
+	res.download( file )
+	await browser.close()
 }
 
 app.get( '/logout', async ( req, res ) => {
