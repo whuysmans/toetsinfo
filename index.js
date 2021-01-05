@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 let port = process.env.PORT || 3000
 const axios = require('axios')
-let school = process.env.SCHOOL || 'https://canvas.kdg.be'
+let school = process.env.SCHOOL
 let quizID = 0
 let courseID = 0
 let token = '' 
@@ -15,11 +15,11 @@ let state = ''
 let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
 const credentials = {
 	client: {
-		id: process.env.CLIENTID || '124000000000000046',
-		secret: process.env.SECRET || 'fD0yA6FzZsiuFFKJRUJtLxOkh5986i5sFHXp4kyrDPVtAjPqVgTa8spe12vwuTx0'
+		id: process.env.CLIENTID,
+		secret: process.env.SECRET
 	},
 	auth: {
-		tokenHost: process.env.SCHOOL || 'https://canvas.kdg.be',
+		tokenHost: process.env.SCHOOL,
 		authorizePath: '/login/oauth2/auth',
 		tokenPath: '/login/oauth2/token'
 	}
@@ -254,8 +254,8 @@ app.listen( port, () => {
 	state = getRandomIdent()
 	oauth2 = require('simple-oauth2').create( credentials )
 	authorizationUri = oauth2.authorizationCode.authorizeURL({
-		redirect_uri: 'http://localhost:3000/callback',
-		//redirect_uri: `${ process.env.APPURL }/callback`,
+		// redirect_uri: 'http://localhost:3000/callback',
+		redirect_uri: `${ process.env.APPURL }/callback`,
 		scope: `url:GET|/api/v1/courses/:course_id/quizzes/:quiz_id/questions`,
 		state: state 
 	})
