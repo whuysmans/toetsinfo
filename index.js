@@ -86,8 +86,7 @@ const createMultipeDropdownOrFillTheBlanksAnswer = ( answers ) => {
 		} )
 		tempHtml += `${ item }: `
 		rowItems.forEach( ( rowItem ) => {
-			tempHtml += rowItem.weight === 100 && rowItem.question_type === 'multiple_dropdowns_question' ? `<span style="margin-right: 10px;"> ${ rowItem.text }* </span>` :
-			`<span style="margin-right: 10px;"> ${ rowItem.text } </span>`
+			tempHtml += `<span style="margin-right: 10px;"> ${ rowItem.text } </span>`
 		} )
 		tempHtml += '<br />'
 	}
@@ -107,8 +106,7 @@ const createMatchingAnswer = ( answers ) => {
 const createMCOrMRAnswer = ( answers ) => {
 	let tempHtml = '<p>'
 	answers.forEach( ( answer ) => {
-		tempHtml += answer.weight === 100 ? `${ answer.text }*<br />` :
-			`${ answer.text }<br />`
+		tempHtml += `${ answer.text }<br />`
 	} )
 	tempHtml += '</p>'
 	return tempHtml
@@ -117,8 +115,7 @@ const createMCOrMRAnswer = ( answers ) => {
 const createTrueFalseAnswer = ( answers ) => {
 	let tempHtml = '<p>'
 	answers.forEach( ( answer ) => {
-		tempHtml += answer.weight === 100 ? `${ answer.text }*<br />`:
-			`${ answer.text }<br />`
+		tempHtml += `${ answer.text }<br />`
 	} )
 	tempHtml += '</p>'
 	return tempHtml
@@ -165,7 +162,7 @@ const generateQuestionRow = ( question ) => {
 }
 
 const generateSpace = () => {
-	html += '<hr><br /><br />'
+	html += '<br /><br /><br />'
 }
 
 const getRandomIdent = () => {
