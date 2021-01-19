@@ -159,7 +159,7 @@ const createAnswerBlock = ( answers, type ) => {
 }
 
 const generateQuestionRow = ( question, index ) => {
-	html += `${ index + 1 }. <div style="padding: 5px">${ question.question_text }</div>`
+	html += `<div style="padding: 5px">${ index + 1 }. ${ question.question_text }</div>`
 }
 
 const generateSpace = () => {
