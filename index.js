@@ -104,10 +104,10 @@ const createMatchingAnswer = ( answers ) => {
 }
 
 const createMCOrMRAnswer = ( answers ) => {
-	const alfbet = 'abcdefghijklmnopqrstuvwxyz'
+	const  alfabet = 'abcdefghijklmnopqrstuvwxyz'
 	let tempHtml = '<p>'
 	answers.forEach( ( answer, index ) => {
-		tempHtml += `${ alfabet.charAt( index ) } ${ answer.text }<br />`
+		tempHtml += `${ alfabet.charAt( index ) }. ${ answer.text }<br />`
 	} )
 	tempHtml += '</p>'
 	return tempHtml
