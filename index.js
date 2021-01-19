@@ -104,9 +104,10 @@ const createMatchingAnswer = ( answers ) => {
 }
 
 const createMCOrMRAnswer = ( answers ) => {
+	const alfbet = 'abcdefghijklmnopqrstuvwxyz'
 	let tempHtml = '<p>'
-	answers.forEach( ( answer ) => {
-		tempHtml += `${ answer.text }<br />`
+	answers.forEach( ( answer, index ) => {
+		tempHtml += `${ alfabet.charAt( index ) } ${ answer.text }<br />`
 	} )
 	tempHtml += '</p>'
 	return tempHtml
@@ -157,8 +158,8 @@ const createAnswerBlock = ( answers, type ) => {
 	}
 }
 
-const generateQuestionRow = ( question ) => {
-	html += `<div style="padding: 5px">${ question.question_text }</div>`
+const generateQuestionRow = ( question, index ) => {
+	html += `${ index + 1 }. <div style="padding: 5px">${ question.question_text }</div>`
 }
 
 const generateSpace = () => {
@@ -209,9 +210,9 @@ app.get('/test', [
 			}
 		}
 		html += '<p>Questions for this Quiz</p>'
-		result.map( ( questionBlock ) => {
+		result.map( ( questionBlock, index ) => {
 			let item = {}
-			generateQuestionRow( questionBlock )
+			generateQuestionRow( questionBlock, index )
 			html += createAnswerBlock( questionBlock.answers, questionBlock.question_type )
 			generateSpace()
 		} )
