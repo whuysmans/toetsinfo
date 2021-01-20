@@ -25,6 +25,8 @@ const credentials = {
 }
 let oauth2 = null
 let authorizationUri = null
+let shuffle = false
+let showCorrect = false
 const { check, validationResult } = require('express-validator')
 
 // login link
@@ -67,9 +69,13 @@ app.get('/start', ( req, res ) => {
 
 const createShortAnswer = ( answers ) => {
 	let tempHtml = '<p>'
-	answers.forEach( ( answer ) => {
-		tempHtml += `<span style="margin-right: 10px;">${ answer.text }</span>`
-	} )
+	if ( showCorrect ) {
+		answers.forEach( ( answer ) => {
+			tempHtml += `<span style="margin-right: 10px;">${ answer.text }</span>`
+		} )
+	} else {
+		tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _'
+	}	
 	tempHtml += '</p>'
 	return tempHtml
 }
@@ -85,9 +91,13 @@ const createMultipeDropdownOrFillTheBlanksAnswer = ( answers ) => {
 			return answer.blank_id === item
 		} )
 		tempHtml += `${ item }: `
-		rowItems.forEach( ( rowItem ) => {
-			tempHtml += `<span style="margin-right: 10px;"> ${ rowItem.text } </span>`
-		} )
+		if ( showCorrect ) {
+			rowItems.forEach( ( rowItem ) => {
+				tempHtml += `<span style="margin-right: 10px;"> ${ rowItem.text } </span>`
+			} )
+		} else {
+			tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _' 
+		}
 		tempHtml += '<br />'
 	}
 	tempHtml += '</p>'
@@ -95,10 +105,23 @@ const createMultipeDropdownOrFillTheBlanksAnswer = ( answers ) => {
 }
 
 const createMatchingAnswer = ( answers ) => {
+	console.log( answers )
 	let tempHtml = '<p>'
-	answers.forEach( ( answer ) => {
-		tempHtml += `<p><span style="margin-right: 5px;">${ answer.left }</span> -----  <span style="margin-left: 5px;">${ answer.right }</span></p>`
-	} )
+	// TODO implement showCorrect for this question type
+	if ( showCorrect ) {
+		answers.forEach( ( answer ) => {
+			tempHtml += `<p><span style="margin-right: 5px;">${ answer.left }</span> -----  <span style="margin-left: 5px;">${ answer.right }</span></p>`
+		} )
+	} else {
+		// first generate 2 random index arrays
+		const leftIndexes = shuffleArray( Array.from( Array( answers.length ).keys() ) )
+		const rightIndexes = shuffleArray( Array.from( Array( answers.length ).keys() ) )
+		// match the lefts and rights according to the random indexes
+		leftIndexes.forEach( ( index ) => {
+			const rightIndex = rightIndexes[ index ]
+			tempHtml += `<p><span style="margin-right: 5px;">${ answers[ index ].left }</span> ---- <span style="margin-left: 5px;">${ answers[ rightIndex ].right }</span></p>`
+		} )
+	}
 	tempHtml += '</p>'
 	return tempHtml
 }
@@ -107,7 +130,7 @@ const createMCOrMRAnswer = ( answers ) => {
 	const  alfabet = 'abcdefghijklmnopqrstuvwxyz'
 	let tempHtml = '<p>'
 	answers.forEach( ( answer, index ) => {
-		tempHtml += `${ alfabet.charAt( index ) }. ${ answer.text }<br />`
+		tempHtml += `${ alfabet.charAt( index ) }. ${ answer.text } ${ showCorrect && answer.weight === 100 ? '*' : '' }<br />`
 	} )
 	tempHtml += '</p>'
 	return tempHtml
@@ -115,20 +138,28 @@ const createMCOrMRAnswer = ( answers ) => {
 
 const createTrueFalseAnswer = ( answers ) => {
 	let tempHtml = '<p>'
-	answers.forEach( ( answer ) => {
-		tempHtml += `${ answer.text }<br />`
-	} )
+	if ( showCorrect ) {
+		answers.forEach( ( answer ) => {
+			tempHtml += `${ answer.text }<br />`
+		} )
+	} else {
+		tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _'
+	}
 	tempHtml += '</p>'
 	return tempHtml
 }
 
 const createNumericalAnswer = ( answers ) => {
 	let tempHtml = '<p>'
-	answers.forEach( ( answer ) => {
-		tempHtml += answer.numerical_answer_type === 'range_answer' && answer.weight === 100 ?
-			`between ${ answer.start } and ${ answer.end }` :
-			answer.weight === 100 && answer.numerical_answer_type === 'exact_answer' ? `${ answer.exact } with margin ${ answer.margin }` : ''
-	} )
+	if ( showCorrect ) {
+		answers.forEach( ( answer ) => {
+			tempHtml += answer.numerical_answer_type === 'range_answer' && answer.weight === 100 ?
+				`between ${ answer.start } and ${ answer.end }` :
+				answer.weight === 100 && answer.numerical_answer_type === 'exact_answer' ? `${ answer.exact } with margin ${ answer.margin }` : ''
+		} )
+	} else {
+		tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _'
+	}
 	tempHtml += '</p>'
 	return tempHtml
 }
@@ -170,6 +201,11 @@ const getRandomIdent = () => {
 	return Math.random().toString(36).substring(4)
 }
 
+const shuffleArray = arr => arr
+	.map( a => [ Math.random(), a ] )
+	.sort( ( a, b ) => a[0] - b[0] )
+	.map( a => a[1] )
+
 // on form submit, launch the Canvas API request
 app.get('/test', [
 	check( 'course' ).isLength({ min: 1, max: 10 }),
@@ -183,6 +219,17 @@ app.get('/test', [
 	}
 	quizID = req.query.assignment
 	courseID = req.query.course
+	if ( req.query.shuffle && req.query.shuffle === 'on' ) {
+		shuffle = true
+	} else {
+		shuffle = false
+	}
+	if ( req.query.showcorrect && req.query.showcorrect === 'on' ) {
+		showCorrect = true
+	} else {
+		showCorrect = false
+	}
+	// console.log( req.query )
 	// token = `Bearer ${ req.query.token }`
 	let quizURL = `${ school }/api/v1/courses/${ courseID }/quizzes/${ quizID }/questions`
 	let result = []
@@ -196,7 +243,6 @@ app.get('/test', [
 					'Authorization': `Bearer ${ token }`
 				}
 			})
-			console.log( response.headers )
 			let questions = response.data
 			questions.map( ( question ) => {
 				result.push( question )
@@ -210,15 +256,24 @@ app.get('/test', [
 			}
 		}
 		html += '<p>Questions for this Quiz</p>'
+		if ( shuffle ) {
+			result = shuffleArray( result )
+		}
 		result.map( ( questionBlock, index ) => {
 			let item = {}
 			generateQuestionRow( questionBlock, index )
-			html += createAnswerBlock( questionBlock.answers, questionBlock.question_type )
+			let answers = questionBlock.answers
+			if ( shuffle ) {
+				answers = shuffleArray( answers )
+			}
+			html += createAnswerBlock( answers, questionBlock.question_type )
 			generateSpace()
 		} )
 		html += '</body></html>'
 		const ts = new Date().getTime()
 		const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
+		showCorrect = false
+		shuffle = false
 		await createHTML( html, outFile, res )
 		// res.download( outFile )
 		html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
@@ -244,7 +299,7 @@ async function createHTML ( str, file, res ) {
 	await page.setContent( str )
 	await page.pdf( { path: file, format: 'A4' } )
 	res.download( file )
-	await browser.close()
+	await browser.close()	
 }
 
 app.get( '/logout', async ( req, res ) => {

@@ -5,29 +5,37 @@
 		<title></title>
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://unpkg.com/purecss@2.0.4/build/pure-min.css" integrity="sha384-LJy5cxQRSMIYu2ic+Tvw0Azob5Z3dQxRkR8LNGIq46AJEdfE9DtuBOCNtifRJeB7" crossorigin="anonymous">
 		<link rel="stylesheet" href="css/styles.css">
 	</head>
 
 	<body>
 
-		
 		<div class="form">
-			<p class="form">Export quiz questions to pdf. Only works with classic Canvas quizzes!</p>
-			<form action="/test" method="get" class="form-example">
-				<div>
-					<label for="course">course ID:</label>
-					<input type="text" id="course" name="course" required minlength="1" maxlength="8" size="10">
-				</div>
-				<div>
-					<label for="assignment"></label>quiz ID:</label>
-					<input type="text" id="assignment" name="assignment" required minlength="1" maxlength="8" size="10">
-				</div>
-				<div>
-					<span><button type="submit">Submit</button></span>
-					<span><button id="logoutButton" type="submit">Logout</button></span>
-				</div>
+			<form action="/test" method="get" class="pure-form pure-form-aligned">
+				<fieldset>
+					<div class="pure-control-group">
+						<label for="course">Course ID</label>
+						<input type="text" id="course" name="course" required minlength="1" maxlength="8" size="10" />
+					</div>
+					<div class="pure-control-group">
+						<label for="assignment">Quiz ID</label>
+						<input type="text" id="assignment" name="assignment" required minlength="1" maxlength="8" size="10"" />
+					</div>
+					<div class="pure-controls">
+						<label for="shuffle" class="pure-checkbox">
+								<input type="checkbox" name="shuffle" id="shuffle" /> Shuffle vragen en antwoorden.
+							</label>
+							<label for="showcorrect" class="pure-checkbox">
+								<input type="checkbox" name="showcorrect" id="showcorrect" /> Markeer correcte antwoorden.
+							</label>
+						<button type="submit" class="pure-button pure-button-primary">Submit</button>
+						<button id="logoutButton" class="pure-button pure-button-primary" type="submit">Logout</button>
+					</div>
+				</fieldset>
 			</form>
 		</div>
+
 		<script>
 			window.onload = () => {
 				const logoutBtn = document.querySelector('#logoutButton')
