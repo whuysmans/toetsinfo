@@ -10,32 +10,33 @@
 	</head>
 
 	<body>
-
-		<div class="form">
-			<form action="/test" method="get" class="pure-form pure-form-aligned">
-				<fieldset>
-					<div class="pure-control-group">
-						<label for="course">Course ID</label>
-						<input type="text" id="course" name="course" required minlength="1" maxlength="8" size="10" />
-					</div>
-					<div class="pure-control-group">
-						<label for="assignment">Quiz ID</label>
-						<input type="text" id="assignment" name="assignment" required minlength="1" maxlength="8" size="10"" />
-					</div>
-					<div class="pure-controls">
-						<label for="shuffle" class="pure-checkbox">
-								<input type="checkbox" name="shuffle" id="shuffle" /> Shuffle vragen en antwoorden.
-							</label>
-							<label for="showcorrect" class="pure-checkbox">
-								<input type="checkbox" name="showcorrect" id="showcorrect" /> Markeer correcte antwoorden.
-							</label>
-						<button type="submit" class="pure-button pure-button-primary">Submit</button>
-						<button id="logoutButton" class="pure-button pure-button-primary" type="submit">Logout</button>
-					</div>
-				</fieldset>
-			</form>
+		<div id="main" class="pure-g">
+			<div class="pure-u-1-3">
+				<h2>Download begin- en eindtijden van de inzendingen voor een klassieke Canvas Quiz.</h2>
+				<p>Hoe vind je Course ID en QuizID?</p>
+				<p>Als je een quiz openklikt, zie je in de adresbalk iets als: canvas.school.com/courses/12345/quizzes/678901. Het eerste getal is de Course ID, het laatste de Quiz ID</p>
+				<p>De resultaten zijn ruw geordend op begintijd, maar de ordening is niet helemaal correct.</p>
+				<p>Maar het moet wel volstaan om in een oogopslag onregelmatigheden op te sporen.</p>
+			</div>
+			<div class="form pure-u-2-3">
+				<form action="/test" method="get" class="pure-form pure-form-aligned">
+					<fieldset>
+						<div class="pure-control-group">
+							<label for="course">Course ID</label>
+							<input type="text" id="course" name="course" required minlength="1" maxlength="8" size="10" />
+						</div>
+						<div class="pure-control-group">
+							<label for="assignment">Quiz ID</label>
+							<input type="text" id="assignment" name="assignment" required minlength="1" maxlength="8" size="10"" />
+						</div>
+						<div class="pure-controls">
+							<button type="submit" class="pure-button pure-button-primary">Submit</button>
+							<button id="logoutButton" class="pure-button button-error" type="submit">Logout</button>
+						</div>
+					</fieldset>
+				</form>
+			</div>
 		</div>
-
 		<script>
 			window.onload = () => {
 				const logoutBtn = document.querySelector('#logoutButton')

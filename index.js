@@ -11,7 +11,7 @@ const path = require('path')
 const parse = require('parse-link-header')
 const puppeteer = require('puppeteer')
 let state = ''
-let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>'
+let html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body><ul>'
 const credentials = {
 	client: {
 		id: process.env.CLIENTID,
@@ -67,134 +67,8 @@ app.get('/start', ( req, res ) => {
 	res.sendFile( path.join( __dirname + '/start.html' ) )
 } )
 
-const createShortAnswer = ( answers ) => {
-	let tempHtml = '<p>'
-	if ( showCorrect ) {
-		answers.forEach( ( answer ) => {
-			tempHtml += `<span style="margin-right: 10px;">${ answer.text }</span>`
-		} )
-	} else {
-		tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _'
-	}	
-	tempHtml += '</p>'
-	return tempHtml
-}
-
-const createMultipeDropdownOrFillTheBlanksAnswer = ( answers ) => {
-	let blankIds = new Set()
-	let tempHtml = '<p>'
-	answers.forEach( ( answer ) => {
-		blankIds.add( answer.blank_id )
-	} )
-	for ( let item of blankIds ) {
-		const rowItems = answers.filter( ( answer ) => {
-			return answer.blank_id === item
-		} )
-		tempHtml += `${ item }: `
-		if ( showCorrect ) {
-			rowItems.forEach( ( rowItem ) => {
-				tempHtml += `<span style="margin-right: 10px;"> ${ rowItem.text } </span>`
-			} )
-		} else {
-			tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _' 
-		}
-		tempHtml += '<br />'
-	}
-	tempHtml += '</p>'
-	return tempHtml
-}
-
-const createMatchingAnswer = ( answers ) => {
-	console.log( answers )
-	let tempHtml = '<p>'
-	// TODO implement showCorrect for this question type
-	if ( showCorrect ) {
-		answers.forEach( ( answer ) => {
-			tempHtml += `<p><span style="margin-right: 5px;">${ answer.left }</span> -----  <span style="margin-left: 5px;">${ answer.right }</span></p>`
-		} )
-	} else {
-		// first generate 2 random index arrays
-		const leftIndexes = shuffleArray( Array.from( Array( answers.length ).keys() ) )
-		const rightIndexes = shuffleArray( Array.from( Array( answers.length ).keys() ) )
-		// match the lefts and rights according to the random indexes
-		leftIndexes.forEach( ( index ) => {
-			const rightIndex = rightIndexes[ index ]
-			tempHtml += `<p><span style="margin-right: 5px;">${ answers[ index ].left }</span> ---- <span style="margin-left: 5px;">${ answers[ rightIndex ].right }</span></p>`
-		} )
-	}
-	tempHtml += '</p>'
-	return tempHtml
-}
-
-const createMCOrMRAnswer = ( answers ) => {
-	const  alfabet = 'abcdefghijklmnopqrstuvwxyz'
-	let tempHtml = '<p>'
-	answers.forEach( ( answer, index ) => {
-		tempHtml += `${ alfabet.charAt( index ) }. ${ answer.text } ${ showCorrect && answer.weight === 100 ? '*' : '' }<br />`
-	} )
-	tempHtml += '</p>'
-	return tempHtml
-}
-
-const createTrueFalseAnswer = ( answers ) => {
-	let tempHtml = '<p>'
-	if ( showCorrect ) {
-		answers.forEach( ( answer ) => {
-			tempHtml += `${ answer.text }<br />`
-		} )
-	} else {
-		tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _'
-	}
-	tempHtml += '</p>'
-	return tempHtml
-}
-
-const createNumericalAnswer = ( answers ) => {
-	let tempHtml = '<p>'
-	if ( showCorrect ) {
-		answers.forEach( ( answer ) => {
-			tempHtml += answer.numerical_answer_type === 'range_answer' && answer.weight === 100 ?
-				`between ${ answer.start } and ${ answer.end }` :
-				answer.weight === 100 && answer.numerical_answer_type === 'exact_answer' ? `${ answer.exact } with margin ${ answer.margin }` : ''
-		} )
-	} else {
-		tempHtml += '_ _ _ _ _ _ _ _ _ _ _ _ _ _ _'
-	}
-	tempHtml += '</p>'
-	return tempHtml
-}
-
-const createAnswerBlock = ( answers, type ) => {
-	switch ( type ) {
-		case 'multiple_dropdowns_question':
-			return createMultipeDropdownOrFillTheBlanksAnswer( answers )
-		case 'fill_in_multiple_blanks_question':
-			return createMultipeDropdownOrFillTheBlanksAnswer( answers )
-		case 'short_answer_question':
-			return createShortAnswer( answers )
-		case 'matching_question':
-			return createMatchingAnswer( answers )
-		case 'multiple_choice_question':
-			return createMCOrMRAnswer( answers )
-		case 'multiple_answers_question':
-			return createMCOrMRAnswer( answers )
-		case 'true_false_question':
-			return createTrueFalseAnswer( answers )
-		case 'numerical_question':
-			return createNumericalAnswer( answers )
-		case 'essay_question':
-			return '<p>answer for essay question here</p>'
-		default:
-			return '<p></p>'
-	}
-}
-
-const generateQuestionRow = ( question, index ) => {
-	html += `<div style="padding: 5px">${ index + 1 }. ${ question.question_text }</div>`
-}
-
-const generateSpace = () => {
-	html += '<br /><br /><br />'
+const createSubmissionRow = ( start, end, email ) => {
+	html += `<li>start: ${ start } end: ${ end } user: ${ email }</li>`
 }
 
 const getRandomIdent = () => {
@@ -205,6 +79,18 @@ const shuffleArray = arr => arr
 	.map( a => [ Math.random(), a ] )
 	.sort( ( a, b ) => a[0] - b[0] )
 	.map( a => a[1] )
+
+const getUserEmail = async ( userId ) => {
+	let userURL = `${ school }/api/v1/users/${ userId }`
+	let user = await axios( {
+		method: 'GET',
+		url: userURL,
+		headers: {
+			'Authorization': `Bearer ${ token }`	
+		}
+	} )
+	return user.data.email
+}
 
 // on form submit, launch the Canvas API request
 app.get('/test', [
@@ -219,19 +105,10 @@ app.get('/test', [
 	}
 	quizID = req.query.assignment
 	courseID = req.query.course
-	if ( req.query.shuffle && req.query.shuffle === 'on' ) {
-		shuffle = true
-	} else {
-		shuffle = false
-	}
-	if ( req.query.showcorrect && req.query.showcorrect === 'on' ) {
-		showCorrect = true
-	} else {
-		showCorrect = false
-	}
+	
 	// console.log( req.query )
 	// token = `Bearer ${ req.query.token }`
-	let quizURL = `${ school }/api/v1/courses/${ courseID }/quizzes/${ quizID }/questions`
+	let quizURL = `${ school }/api/v1/courses/${ courseID }/quizzes/${ quizID }/submissions`
 	let result = []
 	try {
 		let keepGoing = true
@@ -243,9 +120,16 @@ app.get('/test', [
 					'Authorization': `Bearer ${ token }`
 				}
 			})
-			let questions = response.data
-			questions.map( ( question ) => {
-				result.push( question )
+			console.log( response.data )
+			let submissions = response.data.quiz_submissions
+			let sortedSubmissions = submissions.sort( ( a, b ) => new Date( b.started_at ) - new Date( a.started_at) ).reverse()
+			sortedSubmissions.map( ( submission ) => {
+				getUserEmail( submission.user_id ).then( ( email ) => { 
+					console.log( Date.parse( submission.started_at ) )
+					let startDate = new Date( Date.parse( submission.started_at ) ).toLocaleString( 'nl-BE' )
+					let endDate = new Date( Date.parse( submission.finished_at ) ).toLocaleString( 'nl-BE' )
+					createSubmissionRow( startDate, endDate, email ) 
+				} )
 			} )
 			// handle pagination
 			let parsed = parse( response.headers.link )
@@ -255,23 +139,9 @@ app.get('/test', [
 				quizURL = parsed.next.url
 			}
 		}
-		html += '<p>Questions for this Quiz</p>'
-		if ( shuffle ) {
-			result = shuffleArray( result )
-		}
-		result.map( ( questionBlock, index ) => {
-			let item = {}
-			generateQuestionRow( questionBlock, index )
-			let answers = questionBlock.answers
-			if ( shuffle ) {
-				answers = shuffleArray( answers )
-			}
-			html += createAnswerBlock( answers, questionBlock.question_type )
-			generateSpace()
-		} )
-		html += '</body></html>'
+		html += '</ul></body></html>'
 		const ts = new Date().getTime()
-		const outFile = path.join( __dirname, `quiz-printout-${ ts }.pdf` )
+		const outFile = path.join( __dirname, `quiz-submissions-${ ts }.pdf` )
 		showCorrect = false
 		shuffle = false
 		await createHTML( html, outFile, res )
@@ -312,13 +182,12 @@ app.get( '/logout', async ( req, res ) => {
 // on app creation, set the oauth2 parameters
 // TODO state and scope
 app.listen( port, () => {
-	console.log( `click here: http://localhost:3000` )
 	state = getRandomIdent()
 	oauth2 = require('simple-oauth2').create( credentials )
 	authorizationUri = oauth2.authorizationCode.authorizeURL({
 		// redirect_uri: 'http://localhost:3000/callback',
 		redirect_uri: `${ process.env.APPURL }/callback`,
-		scope: `url:GET|/api/v1/courses/:course_id/quizzes/:quiz_id/questions`,
+		scope: `url:GET|/api/v1/courses/:course_id/quizzes/:quiz_id/submissions url:GET|/api/v1/users/:id`,
 		state: state 
 	})
 } )
