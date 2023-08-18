@@ -12,26 +12,20 @@
 	<body>
 		<div id="main" class="pure-g">
 			<div class="pure-u-1-3">
-				<h2>Download begin- en eindtijden van de inzendingen voor een klassieke Canvas Quiz.</h2>
-				<p>Hoe vind je Course ID en QuizID?</p>
-				<p>Als je een quiz openklikt, zie je in de adresbalk iets als: canvas.school.com/courses/12345/quizzes/678901. Het eerste getal is de Course ID, het laatste de Quiz ID</p>
-				<p>De resultaten zijn ruw geordend op begintijd, maar de ordening is niet helemaal correct.</p>
-				<p>Maar het moet wel volstaan om in een oogopslag onregelmatigheden op te sporen.</p>
+				<h2>Check de instellingen van je Canvas-toets door hier de url van je toets in te geven.</h2>
+				<p>Hoe vind je de url van je toets?</p>
+				<p>Als je een quiz openklikt, zie je in de adresbalk iets als: https://canvas.school.com/courses/12345/quizzes/678901. Kopieer deze tekst volledig en plak in het veld hiernaast.</p>
 			</div>
 			<div class="form pure-u-2-3">
-				<form action="/test" method="get" class="pure-form pure-form-aligned">
+				<form action="/check" method="get" class="pure-form pure-form-aligned">
 					<fieldset>
 						<div class="pure-control-group">
-							<label for="course">Course ID</label>
-							<input type="text" id="course" name="course" required minlength="1" maxlength="8" size="10" />
-						</div>
-						<div class="pure-control-group">
-							<label for="assignment">Quiz ID</label>
-							<input type="text" id="assignment" name="assignment" required minlength="1" maxlength="8" size="10"" />
+							<label for="course">Toets URL</label>
+							<input type="text" id="quiz" name="quiz" required minlength="10" maxlength="250" size="80" />
 						</div>
 						<div class="pure-controls">
-							<button type="submit" class="pure-button pure-button-primary">Submit</button>
-							<button id="logoutButton" class="pure-button button-error" type="submit">Logout</button>
+							<button type="submit" class="pure-button pure-button-primary">Check de toets</button>
+							<button id="logoutButton" class="pure-button button-error" type="submit">Uitloggen</button>
 						</div>
 					</fieldset>
 				</form>
@@ -42,8 +36,7 @@
 				const logoutBtn = document.querySelector('#logoutButton')
 				logoutBtn.addEventListener( 'click', async ( event ) => {
 				event.preventDefault()
-				fetch( '/logout' )
-				window.location.href = '/'
+				window.location.href = '/logout'
 				} )
 			}
 		</script>
