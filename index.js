@@ -72,7 +72,7 @@ app.get('/check', [
 		return res.status( 422 ).json( { errors: errors.array() } )
 	}
 	console.log(req.query.quiz)
-	const quizURL = req.query.quiz
+	const quizURL = req.query.quiz.split('?')[0]
 	const splittedURLArray = quizURL.split('/')
 	const courseID = splittedURLArray[4]
 	const quizID = splittedURLArray[6]
@@ -154,7 +154,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 								<li><span class="red"></span>Niet correct, opnieuw instellen.</li>
 							</ul>
 						</caption>`
-	const tableHeaders = `<table class="pure-table pure-table-horizontal">${ tableLegend }<thead><tr><th>Naam</th><th>Setting</th><th>OK?</th></tr></thead>`
+	const tableHeaders = `<table class="pure-table pure-table-horizontal">${ tableLegend }<thead><tr><th>Naam</th><th>Setting</th><th>OK?</th><th></th></tr></thead>`
 	const oneQuestionAtATime = {
 		description: 'Een vraag per keer',
 		value: restData.one_question_at_a_time,
@@ -193,7 +193,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 	}
 	const availableUntil = {
 		description: 'Beschikbaar tot',
-		value: new Date(restData.all_dates[0].lock_at).toLocaleString('nl-BE', {timeZone: 'CET'}),
+		value: restData.all_dates[0].lock_at ? new Date(restData.all_dates[0].lock_at).toLocaleString('nl-BE', {timeZone: 'CET'}) : '1/1/1970 01:00:00' ,
 		expectedValue: '1/1/1970 01:00:00',
 		severity: 'orange'
 	}
@@ -228,18 +228,18 @@ const buildResultTable = ( restData, graphqlData ) => {
 		severity: 'orange'
 	}
 	const tableBody = `<tbody>
-		<tr><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td></tr>
-		<tr><td>${ timeLimit.description }</td><td>${ timeLimit.value !== null ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td></tr>
-		<tr><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td></tr>
-		<tr><td>${ lockdownBrowser.description }</td><td>${ lockdownBrowser.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(lockdownBrowser) }">${ lockdownBrowser.value === lockdownBrowser.expectedValue ? 'OK' : 'NOK' }</td></tr>
-		<tr><td>${ monitor.description }</td><td>${ monitor.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(monitor) }">${ monitor.value === monitor.expectedValue ? 'OK' : 'NOK' }</td></tr>
-		<tr><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td></tr>
-		<tr><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === availableUntil.expectedValue ? 'NOK' : 'OK?' }</td></tr>
-		<tr><td>${ questionTypes.description }</td><td>${ questionTypes.value }</td><td style="background-color:orange";>OK?</td></tr>
-		<tr><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === -1 ? 'onbeperkt' : allowedAttempts.value }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td></tr>
-		<tr><td>${ coursePublished.description }</td><td>${ coursePublished.value === 'available' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(coursePublished) }">${ coursePublished.value === coursePublished.expectedValue ? 'OK' : 'NOK' }</td></tr>
-		<tr><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ isInModule.value === 'Nee' ? 'red' : 'orange' }">${ isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td></tr>
-		<tr><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:${ questionCount.value > 0 ? 'green' : 'red' }">${ questionCount.value > 0 ? 'OK' : 'OK?' }</td></tr>
+		<tr><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
+		<tr><td>${ timeLimit.description }</td><td>${ timeLimit.value !== null ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
+		<tr><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td><td>&#9432;</td></tr>
+		<tr><td>${ lockdownBrowser.description }</td><td>${ lockdownBrowser.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(lockdownBrowser) }">${ lockdownBrowser.value === lockdownBrowser.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
+		<tr><td>${ monitor.description }</td><td>${ monitor.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(monitor) }">${ monitor.value === monitor.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
+		<tr><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
+		<tr><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === availableUntil.expectedValue ? 'NOK' : 'OK?' }</td><td>&#9432;</td></tr>
+		<tr><td>${ questionTypes.description }</td><td>${ questionTypes.value }</td><td style="background-color:orange";>OK?</td><td>&#9432;</td></tr>
+		<tr><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === -1 ? 'onbeperkt' : allowedAttempts.value }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
+		<tr><td>${ coursePublished.description }</td><td>${ coursePublished.value === 'available' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(coursePublished) }">${ coursePublished.value === coursePublished.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
+		<tr><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ isInModule.value === 'Nee' ? 'red' : 'orange' }">${ isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td><td>&#9432;</td></tr>
+		<tr><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:${ questionCount.value > 0 ? 'green' : 'red' }">${ questionCount.value > 0 ? 'OK' : 'OK?' }</td><td>&#9432;</td></tr>
 		</tbody>
 	`
 	const tableEnd = `</table>
