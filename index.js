@@ -104,6 +104,9 @@ app.get('/check', [
 			  course {
 				name
 				state
+				account {
+					name
+				}
 			  }
 			  quiz {
 				modules {
@@ -227,19 +230,51 @@ const buildResultTable = ( restData, graphqlData ) => {
 		expectedValue: 0,
 		severity: 'orange'
 	}
+	const pointsPossible = {
+		description: 'Aantal punten',
+		value: restData.points_possible,
+		expectedValue: 0,
+		severity: 'orange'
+	}
+	const shuffleAnswers = {
+		description: 'Volgorde van antwoorden wisselen',
+		value: restData.shuffle_answers,
+		expectedValue: false,
+		severity: 'orange'
+	}
+	const hasAccessCode = {
+		description: 'Toegangscode ingesteld',
+		value: restData.has_access_code,
+		expectedValue: false,
+		severity: 'red'
+	}
+	const ipFilter = {
+		description: 'IP filter ingesteld',
+		value: restData.ip_filter,
+		expectedValue: null,
+		severity: 'red'
+	}
+	const isMIT = () => {
+		return graphqlData.course.account.name === 'Examencursussen'
+	}
 	const tableBody = `<tbody>
-		<tr><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
-		<tr><td>${ timeLimit.description }</td><td>${ timeLimit.value !== null ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
-		<tr><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td><td>&#9432;</td></tr>
-		<tr><td>${ lockdownBrowser.description }</td><td>${ lockdownBrowser.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(lockdownBrowser) }">${ lockdownBrowser.value === lockdownBrowser.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
-		<tr><td>${ monitor.description }</td><td>${ monitor.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(monitor) }">${ monitor.value === monitor.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
-		<tr><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
-		<tr><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === availableUntil.expectedValue ? 'NOK' : 'OK?' }</td><td>&#9432;</td></tr>
-		<tr><td>${ questionTypes.description }</td><td>${ questionTypes.value }</td><td style="background-color:orange";>OK?</td><td>&#9432;</td></tr>
-		<tr><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === -1 ? 'onbeperkt' : allowedAttempts.value }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
-		<tr><td>${ coursePublished.description }</td><td>${ coursePublished.value === 'available' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(coursePublished) }">${ coursePublished.value === coursePublished.expectedValue ? 'OK' : 'NOK' }</td><td>&#9432;</td></tr>
-		<tr><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ isInModule.value === 'Nee' ? 'red' : 'orange' }">${ isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td><td>&#9432;</td></tr>
-		<tr><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:${ questionCount.value > 0 ? 'green' : 'red' }">${ questionCount.value > 0 ? 'OK' : 'OK?' }</td><td>&#9432;</td></tr>
+		<tr class="hover-container"><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Publiceer tijdig je toets!</p></aside></td></tr>
+		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== null ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Ga naar de instellingen van je toets en vink de tijdlimiet weer uit.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Heb je ervoor gekozen om je vragen een voor een aan te bieden en is dit in lijn met eventuele opleidingsspecifieke afspraken?</p></aside></td></tr>
+		<tr class="hover-container"><td>${ lockdownBrowser.description }</td><td>${ lockdownBrowser.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(lockdownBrowser) }">${ lockdownBrowser.value === lockdownBrowser.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Schakel de lockdown browser in. Hoe je dat doet, vind je op <a href="https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor">deze pagina</a>.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ monitor.description }</td><td>${ monitor.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(monitor) }">${ monitor.value === monitor.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Enkel als je een bericht hebt ontvangen dat je een student hebt die het exmen van thuis uit mag afleggen, kan je de monitor inschakelen. 
+		Heb je zo'n bericht gekregen? Prima, laat de monitor aan staan. 
+		Heb je geen bericht ontvangen? Ga naar de instellingen van de lockdown browser en schakel deze weer uit. <a href="https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor">Meer info</a>.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij examens tonen we nooit meteen de juiste antwoorden. Deze maak je pas zichtbaar nadat de punten officieel gecommuniceerd zijn.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === availableUntil.expectedValue ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte einddatum en -tijd in. Controleer zeker of je de beschikbaarheid 1 uur langer dan de duurtijd van het examen hebt ingesteld.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ questionTypes.description }</td><td>${ questionTypes.value }</td><td style="background-color:orange";>OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je met toetsbanken werkt, is het normaal dat je hier geen vraagtypes ziet staan. Controleer dan wel of de linken naar de banken goed gelegd zijn. Als je niet met toetsbanken werkt, controleer dan of de hier getoonde vraagtypes overeenkomen met jouw vragen!</p></aside></td></tr>
+		<tr class="hover-container"><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === -1 ? 'onbeperkt' : allowedAttempts.value }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Voor een examen stellen we standaard maximum 1 poging in. Pas dit in de instellingen van je toets aan.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ coursePublished.description }</td><td>${ coursePublished.value === 'available' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(coursePublished) }">${ coursePublished.value === coursePublished.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Zorg ervoor dat ook je cursus tijdig gepubliceerd is!</p></aside></td></tr>
+		<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ !isMIT() ? 'green' : isInModule.value === 'Nee' ? 'red' : 'orange' }">${ !isMIT() ? 'OK' : isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je niet bij MIT werkt, mag je dit negeren! Als je wel bij MIT werkt, controleer dan of dit inderdaad de module is waarin de toets moet zitten. </p></aside></td></tr>
+		<tr class="hover-container"><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je met toetsbanken werkt, is het normaal dat je hier melding krijgt dat er 0 vragen in de toets zitten. Controleer dan wel of de linken naar de banken goed gelegd zijn. Als je niet met toetsbanken werkt, controleer dan of hier het juiste aantal vragen is weergegeven!</p></aside></td></tr>
+		<tr class="hover-container"><td>${ pointsPossible.description }</td><td>${ pointsPossible.value }</td><td style="background-color:${ pointsPossible.value === 0 ? 'red' : 'orange' }">${ pointsPossible.value === 0 ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of het aantal punten correct is.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value }</td><td style="background-color:${ shuffleAnswers.value === true ? 'green' : 'orange' }">${ shuffleAnswers.value === true ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je toets meerkeuzevragen vragen bevat, moet je de instelling 'Volgorde van antwoorde wisselen' aanvinken.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value }</td><td style="background-color:${ ipFilter.value === null ? 'green' : 'red' }">${ ipFilter.value === null ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
 		</tbody>
 	`
 	const tableEnd = `</table>

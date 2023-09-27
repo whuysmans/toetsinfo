@@ -42,3 +42,49 @@ table {
 .legend .orange {
 	background-color: orange;
 }
+
+
+.hover-target {
+	position: relative;
+	cursor: pointer;
+  }
+  
+.hover-popup {
+	display: none;
+	border: 1px solid lightgrey;
+	background: white;
+	z-index: 1;
+	position: absolute;
+	left: 50%;
+	width: max-content;
+	max-width: 25rem;
+	top: 115%;
+	text-align: center;
+	padding: 0.75rem;
+	border-radius: 5px;
+	transform: translateX(-50%);
+}
+.hover-popup > *:first-child {
+	margin-top: 0;
+}
+.hover-popup > *:last-child {
+	margin-bottom: 0;
+}
+.hover-popup:before {
+	content: '';
+	display: block;
+	position: absolute;
+	top: -6px;
+	left: 50%;
+	width: 10px; 
+	height: 10px; 
+	background: white;
+	border-top: solid 1px lightgrey;
+	border-left: solid 1px lightgrey;
+	transform: translateX(-50%) rotate(45deg);
+}
+.hover-target:focus .hover-popup,
+.hover-target:hover .hover-popup {
+	display: block;
+}
+ 
