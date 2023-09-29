@@ -171,7 +171,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 		severity: 'red'
 	}
 	const published = {
-		description: 'Gepubliceerd',
+		description: 'Toets is gepubliceerd',
 		value: restData.published,
 		expectedValue: true,
 		severity: 'red'
