@@ -239,8 +239,8 @@ const buildResultTable = ( restData, graphqlData ) => {
 	const shuffleAnswers = {
 		description: 'Volgorde van antwoorden wisselen',
 		value: restData.shuffle_answers,
-		expectedValue: false,
-		severity: 'orange'
+		expectedValue: needsShuffle(restData),
+		severity: 'red'
 	}
 	const hasAccessCode = {
 		description: 'Toegangscode ingesteld',
@@ -257,6 +257,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 	const isMIT = () => {
 		return graphqlData.course.account.name === 'Examencursussen'
 	}
+	
 	const tableBody = `<tbody>
 		<tr class="hover-container"><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Publiceer tijdig je toets!</p></aside></td></tr>
 		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== null ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Ga naar de instellingen van je toets en vink de tijdlimiet weer uit.</p></aside></td></tr>
@@ -273,7 +274,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 		<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ !isMIT() ? 'green' : isInModule.value === 'Nee' ? 'red' : 'orange' }">${ !isMIT() ? 'OK' : isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je niet bij MIT werkt, mag je dit negeren! Als je wel bij MIT werkt, controleer dan of dit inderdaad de module is waarin de toets moet zitten. </p></aside></td></tr>
 		<tr class="hover-container"><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je met toetsbanken werkt, is het normaal dat je hier melding krijgt dat er 0 vragen in de toets zitten. Controleer dan wel of de linken naar de banken goed gelegd zijn. Als je niet met toetsbanken werkt, controleer dan of hier het juiste aantal vragen is weergegeven!</p></aside></td></tr>
 		<tr class="hover-container"><td>${ pointsPossible.description }</td><td>${ pointsPossible.value }</td><td style="background-color:${ pointsPossible.value === 0 ? 'red' : 'orange' }">${ pointsPossible.value === 0 ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of het aantal punten correct is.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value }</td><td style="background-color:${ shuffleAnswers.value === true ? 'green' : 'orange' }">${ shuffleAnswers.value === true ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je toets meerkeuzevragen vragen bevat, moet je de instelling 'Volgorde van antwoorde wisselen' aanvinken.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value }</td><td style="background-color:${ rowColor(shuffleAnswers) }">${ shuffleAnswers.value === shuffleAnswers.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je toets meerkeuzevragen vragen bevat, moet je de instelling 'Volgorde van antwoorde wisselen' aanvinken.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value }</td><td style="background-color:${ ipFilter.value === null ? 'green' : 'red' }">${ ipFilter.value === null ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
 		</tbody>
 	`
@@ -314,6 +315,14 @@ const dateRowColor = (obj) => {
 	}
 }
 
+const needsShuffle = (data) => {
+	if ( data.question_types && data.question_types.length > 0 ) {
+		return data.question_types.includes('multiple_choice_question') ||
+			data.question_types.includes('multiple_answers_question')
+	} else {
+		return false
+	}
+}
 
 const rowColor = (obj) => {
 	if ( obj.expectedValue === obj.value ) {
