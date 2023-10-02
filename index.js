@@ -245,7 +245,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 	const hasAccessCode = {
 		description: 'Toegangscode ingesteld',
 		value: restData.has_access_code,
-		expectedValue: false,
+		expectedValue: lockdownBrowser.value,
 		severity: 'red'
 	}
 	const ipFilter = {
@@ -274,7 +274,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 		<tr class="hover-container"><td>${ questionTypes.description }</td><td>${ questionTypes.value }</td><td style="background-color:orange";>OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>${ questionTypes.value !== '' ? 'Controleer of al soorten examenvragen die je in je examen wil opnemen hier vermeld staan.' : 'Er zitten nog geen vragen in de toets. Voeg deze zeker nog toe! Als je met toetsbanken werkt: controleer of de linken naar de banken goed gelegd zijn.' }</p></aside></td></tr>
 		<tr class="hover-container"><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of hier het juiste aantal vragen is weergegeven.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === availableUntil.expectedValue ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte einddatum en -tijd in. Controleer zeker of je de beschikbaarheid 1 uur langer dan de duurtijd van het examen hebt ingesteld.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel voor je examen nooit een toegangscode in.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je examen moet altijd een toegangscode instellen via de Lockdown Browser. Deze code wordt dan automatisch in de toetsinstellingen ingevuld en moet je niet meer wijzigen.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value === null ? 'Nee' : 'Ja' }</td><td style="background-color:${ ipFilter.value === null ? 'green' : 'red' }">${ ipFilter.value === null ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
 		${ !isMIT() ? '' : `<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ isInModule.value === 'Nee' ? 'red' : 'orange' }">${ isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of dit inderdaad de module is waarin de toets moet zitten. </p></aside></td></tr` }
 		</tbody>
