@@ -249,10 +249,15 @@ const buildResultTable = ( restData, graphqlData ) => {
 		severity: 'red'
 	}
 	const ipFilter = {
-		description: 'IP filter ingesteld',
+		description: 'IP filter',
 		value: restData.ip_filter,
 		expectedValue: null,
 		severity: 'red'
+	}
+	const respSettings = {
+		description: 'Lockdown Browser instellingen',
+		value: '?',
+		expectedValue: ''
 	}
 	const isMIT = () => {
 		return graphqlData.course.account.name.includes('Examencursussen')
@@ -277,6 +282,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je moet voor je examen altijd een toegangscode instellen via de Lockdown Browser. Deze code wordt dan automatisch in de toetsinstellingen ingevuld en moet je niet meer wijzigen. Als je een openboek examen hebt - dus zonder lockdown browser - kan je de toegangscode rechtsreeks in de instellingen van de toets ingeven.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value === null ? 'Nee' : 'Ja' }</td><td style="background-color:${ ipFilter.value === null ? 'green' : 'red' }">${ ipFilter.value === null ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
 		${ !isMIT() ? '' : `<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ isInModule.value === 'Nee' ? 'red' : 'orange' }">${ isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of dit inderdaad de module is waarin de toets moet zitten. </p></aside></td></tr` }
+		${ !lockdownBrowser.value ? '' : `<tr class="hover-container"><td>${ respSettings.description }</td><td>${ respSettings.value }</td><td style="background-color: orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Dit tool kan de instellingen van de Lockdown Browser niet automatisch checken. Kijk ze zeker nog eens na. Hier vind je de juiste instellingen: <a href="https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor#LDBmonitor" target="_blank">https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor#LDBmonitor</a></p></aside></td></tr>` }
 		</tbody>
 	`
 	const tableEnd = `</table>
