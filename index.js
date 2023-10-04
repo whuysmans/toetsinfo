@@ -196,8 +196,8 @@ const buildResultTable = ( restData, graphqlData ) => {
 	}
 	const availableUntil = {
 		description: 'Beschikbaar tot',
-		value: restData.all_dates[0].lock_at ? new Date(restData.all_dates[0].lock_at).toLocaleString('nl-BE', {timeZone: 'CET'}) : '1/1/1970 01:00:00' ,
-		expectedValue: '1/1/1970 01:00:00',
+		value: restData.all_dates.map((row) => row.lock_at !== null ? new Date(row.lock_at).toLocaleString('nl-BE', {timeZone: 'CET'}) : '').filter((el) => el !== '').join(', '),
+		expectedValue: '',
 		severity: 'orange'
 	}
 	const questionTypes = {
@@ -314,7 +314,7 @@ const getRandomIdent = () => {
 }
 
 const dateRowColor = (obj) => {
-	if ( obj.value === '1/1/1970 01:00:00' ) {
+	if ( obj.value === '' ) {
 		return 'red'
 	}
 	else {
