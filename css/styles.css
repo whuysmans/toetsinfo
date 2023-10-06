@@ -87,4 +87,8 @@ table {
 .hover-target:hover .hover-popup {
 	display: block;
 }
+
+.pure-controls {
+	margin-bottom: 3rem;
+}
  
