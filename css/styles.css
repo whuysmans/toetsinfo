@@ -12,7 +12,7 @@ body {
 }
 
 table {
-	margin-bottom: 2em;
+	margin-bottom: 4em;
 }
 
 .legend {
@@ -88,7 +88,4 @@ table {
 	display: block;
 }
 
-.pure-controls {
-	margin-bottom: 3rem;
-}
  
