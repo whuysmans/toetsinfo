@@ -165,6 +165,7 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 					</head><body><div id="main">`
 	const title = restData.title
 	const linkTarget = quizURL.replace("quizzes", "assignments")
+	const assignmentModule = findAssignmentModule( graphqlData, linkTarget )
 	const tableTitle = `<p>Check instellingen voor:</p><h2><a href="${ linkTarget }">${ title }</a></h2>`
 	const tableLegend = `<caption>
 							<ul class="legend">
@@ -288,6 +289,24 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		expectedValue: true,
 		severity: 'orange'
 	}
+	const linkInModule = {
+		description: 'Link naar toets staat in module',
+		value: assignmentModule && Object.keys(assignmentModule).length !== 0,
+		expectedValue: true,
+		severity: 'orange'
+	}
+
+	const linkInModuleOutput = () => {
+		if ( linkInModule.value === true ) {
+			return `<tr class="hover-container"><td>${ linkInModule.description }</td><td>${ linkInModule.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ linkInModule.value === false ? 'orange' : 'orange' }">${ linkInModule.value === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>${ linkInModule.value === false ? 'We bevelen aan om in de link naar de toets in de examenmodule van de juiste periode te zetten.' : `De link naar de toets staat in deze module: ${ assignmentModule.name }`}</p></aside></td></tr>	
+					<tr class="hover-container"><td>Module met toetslink gepubliceerd</td><td>${ assignmentModule.published === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ assignmentModule.published === false ? 'red' : 'green' }">${ assignmentModule.published === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De module met de toetslink moet gepubliceerd zijn voor het exmaen.</p></aside></td></tr>
+					<tr class="hover-container"><td>Toetslink gepubliceerd</td><td>${ assignmentModule.moduleItemsConnection.nodes[0].published === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ assignmentModule.moduleItemsConnection.nodes[0].published === false ? 'red' : 'green' }">${ assignmentModule.moduleItemsConnection.nodes[0].published === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toetslink moet gepubliceerd zijn.</p></aside></td></tr>
+					`
+		} else {
+			return ''
+		}
+
+	}
 	// const isMIT = () => {
 	// 	return graphqlData.course.account.name.includes('Examencursussen')
 	// }
@@ -299,6 +318,7 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		<tr class="hover-container"><td>${ shuffleQuestions.description }</td><td>${ shuffleQuestions.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'green' : 'orange' }">${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>We raden af om de instelling 'Vragen opnieuw rangschikken' aan te vinken.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== false ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Deze vink je in de instellingen van de toets altijd uit.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ rowColor(isInModule) }">${ isInModule.value === isInModule.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>SchoolYear werkt niet met toetsen die als module-item aan een module werden toegevoegd. Zet in de module een link naar de toets.</p></aside></td></tr>
+		${ linkInModuleOutput() }
 		<tr class="hover-container"><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === false ? 'meer dan 1' : 1 }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Voor een examen stellen we standaard maximum 1 poging in.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij examens toon je nooit meteen de juiste antwoorden. Deze maak je pas zichtbaar nadat de punten officieel gecommuniceerd zijn.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === 'question' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Heb je ervoor gekozen om je vragen een voor een aan te bieden en is dit in lijn met eventuele opleidingsspecifieke afspraken?Op <a href="https://canvas.kdg.be/courses/24981/pages/waar-vind-ik-de-exameninstructies-en-handleidingen-voor-mijn-opleiding" target="_blank">deze pagina</a> kan je eventuele opleidingsspecifieke afspraken nog eens checken.</p></aside></td></tr>
@@ -372,6 +392,10 @@ app.get( '/logout', async ( req, res ) => {
 	token = ''
 	res.redirect('/')
 } )
+
+const findAssignmentModule = ( graphqlData, url ) => {
+	return graphqlData.course.modulesConnection.nodes.find((module) => module.moduleItemsConnection.nodes.find((item) => item.moduleItemUrl === url))
+}
 
 // on app creation, set the oauth2 parameters
 // TODO state and scope
