@@ -76,7 +76,8 @@ app.get('/check', [
 	const splittedURLArray = quizURL.split('/')
 	const courseID = splittedURLArray[4]
 	const quizID = splittedURLArray[6]
-	const restAPIURL = `${ process.env.SCHOOL }/api/v1/courses/${ courseID }/quizzes/${ quizID }`
+	const restAPIURL = `${ process.env.SCHOOL }/api/quiz/v1/courses/${ courseID }/quizzes/${ quizID }`
+	const itemsAPIURL = `${ process.env.SCHOOL }/api/quiz/v1/courses/${ courseID }/quizzes/${ quizID }/items`
 	const graphQLURL = `${ process.env.SCHOOL }/api/graphql`
 	console.log(restAPIURL)
 
@@ -89,6 +90,14 @@ app.get('/check', [
 			}
 		})
 		console.log( restResp.data )
+		let itemsResp = await axios({
+			method: 'GET',
+			url: itemsAPIURL,
+			headers: {
+				'Authorization': `Bearer ${ token }`
+			}	
+		})
+		console.log ( itemsResp.data )
 		const graphQLClient = new GraphQLClient( graphQLURL, {
 			headers: {
 				Authorization: `Bearer ${ token }`
@@ -96,28 +105,35 @@ app.get('/check', [
 		} )
 		const query = `
 		query MyQuery( $id: ID! ) {
-			assignment(id: $id) {
-			  name
-			  pointsPossible
-			  postManually
-			  state
-			  course {
-				name
+			course( id: $id ) {
 				state
-				account {
-					name
+				modulesConnection {
+					nodes {
+						name
+						published
+						moduleItemsConnection {
+							nodes {
+								title
+								published
+								moduleItemUrl
+							}
+						}
+					}
 				}
-			  }
-			  quiz {
-				modules {
-					name
+				assignmentsConnection {
+					nodes {
+						_id
+						name
+						moduleItems {
+							url
+						}
+					}
 				}
-			  }
 			}
 		  }
 		`
 		const variables = {
-			id: parseInt( restResp.data.assignment_id )
+			id: parseInt( courseID )
 		}
 		try {
 			const graphResp = await graphQLClient.request(
@@ -125,7 +141,7 @@ app.get('/check', [
 				variables
 			)
 			console.log( JSON.stringify( graphResp ) )
-			const resultHTML = buildResultTable( restResp.data, graphResp.assignment )
+			const resultHTML = buildResultTable( restResp.data, graphResp, quizURL, quizID, itemsResp.data )
 			res.send( resultHTML )
 		} catch( graphqlErr ) {
 			console.log( graphqlErr )
@@ -138,7 +154,7 @@ app.get('/check', [
 
 } )
 
-const buildResultTable = ( restData, graphqlData ) => {
+const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) => {
 	let html = `<html>
 					<head>
 						<meta charset="utf-8">	
@@ -148,7 +164,7 @@ const buildResultTable = ( restData, graphqlData ) => {
 						<link rel="stylesheet" href="css/styles.css">
 					</head><body><div id="main">`
 	const title = restData.title
-	const linkTarget = restData.html_url
+	const linkTarget = quizURL.replace("quizzes", "assignments")
 	const tableTitle = `<p>Check instellingen voor:</p><h2><a href="${ linkTarget }">${ title }</a></h2>`
 	const tableLegend = `<caption>
 							<ul class="legend">
@@ -160,14 +176,14 @@ const buildResultTable = ( restData, graphqlData ) => {
 	const tableHeaders = `<table class="pure-table pure-table-horizontal">${ tableLegend }<thead><tr><th>Naam</th><th>Setting</th><th>OK?</th><th></th></tr></thead>`
 	const oneQuestionAtATime = {
 		description: 'Een vraag per keer',
-		value: restData.one_question_at_a_time,
-		expectedValue: true,
+		value: restData.quiz_settings.one_at_a_time_type,
+		expectedValue: 'question',
 		severity: 'orange' 
 	}
 	const timeLimit = {
 		description: 'Tijdslimiet',
-		value: restData.time_limit,
-		expectedValue: null,
+		value: restData.quiz_settings.has_time_limit,
+		expectedValue: false,
 		severity: 'red'
 	}
 	const published = {
@@ -176,40 +192,40 @@ const buildResultTable = ( restData, graphqlData ) => {
 		expectedValue: true,
 		severity: 'red'
 	}
-	const lockdownBrowser = {
-		description: 'Lockdown Browser vereist',
-		value: restData.require_lockdown_browser,
+	const schoolYear = {
+		description: 'SchoolYear vereist',
+		value: restData.quiz_settings.require_student_access_code && restData.quiz_settings.student_access_code.substring(0,13) === 'do-not-share-',
 		expectedValue: true,
 		severity: 'red'
 	}
-	const monitor = {
-		description: 'Lockdown Browser + Monitor vereist',
-		value: restData.require_lockdown_browser_monitor,
-		expectedValue: false,
-		severity: 'red'
-	}
 	const showCorrect = {
-		description: 'Toon onmiddellijk juiste antwoorden',
-		value: restData.show_correct_answers,
-		expectedValue: false,
+		description: 'Verberg resultaten en juiste antwoorden',
+		value: restData.quiz_settings.result_view_settings.result_view_restricted,
+		expectedValue: true,
 		severity: 'red'
 	}
-	const availableUntil = {
-		description: 'Beschikbaar tot',
-		value: restData.all_dates.map((row) => row.lock_at !== null ? new Date(row.lock_at).toLocaleString('nl-BE', {timeZone: 'CET'}) : '').filter((el) => el !== '').join(', '),
+	const availableFrom = {
+		description: 'Beschikbaar vanaf',
+		value: new Date(restData.unlock_at).toLocaleString('nl-BE', {timeZone: 'CET'}),
 		expectedValue: '',
 		severity: 'orange'
 	}
-	const questionTypes = {
-		description: 'Aanwezige vraagtypes',
-		value: restData.question_types.join(', '),
-		expectedValue: [],
+	const availableUntil = {
+		description: 'Beschikbaar tot',
+		value: new Date(restData.lock_at).toLocaleString('nl-BE', {timeZone: 'CET'}),
+		expectedValue: '',
 		severity: 'orange'
 	}
+	// const questionTypes = {
+	// 	description: 'Aanwezige vraagtypes',
+	// 	value: restData.question_types.join(', '),
+	// 	expectedValue: [],
+	// 	severity: 'orange'
+	// }
 	const allowedAttempts = {
 		description: 'Aantal pogingen toegestaan',
-		value: restData.allowed_attempts,
-		expectedValue: 1,
+		value: Object.keys(restData.quiz_settings.multiple_attempts).length === 0 || restData.quiz_settings.multiple_attempts.multiple_attempts_enabled === false,
+		expectedValue: true,
 		severity: 'red'
 	}
 	const coursePublished = {
@@ -220,69 +236,79 @@ const buildResultTable = ( restData, graphqlData ) => {
 	}
 	const isInModule = {
 		description: 'Toets zit in module',
-		value: graphqlData.quiz.modules.length > 0 ? graphqlData.quiz.modules.map((module) =>  module.name).join(', ') : 'Nee',
-		expectedValue: '',
+		value: graphqlData.course.assignmentsConnection.nodes.filter((node) => node._id === quizID && node.moduleItems.length > 0).length > 0,
+		expectedValue: false,
 		severity: 'red'
 	}
-	const questionCount = {
-		description: 'Aantal vragen',
-		value: restData.question_count,
-		expectedValue: 0,
-		severity: 'orange'
-	}
+	// const questionCount = {
+	// 	description: 'Aantal vragen',
+	// 	value: restData.question_count,
+	// 	expectedValue: 0,
+	// 	severity: 'orange'
+	// }
 	const pointsPossible = {
 		description: 'Aantal punten',
 		value: restData.points_possible,
 		expectedValue: 0,
 		severity: 'orange'
 	}
-	const shuffleAnswers = {
-		description: 'Volgorde van antwoorden wisselen',
-		value: restData.shuffle_answers,
-		expectedValue: needsShuffle(restData),
+	// const shuffleAnswers = {
+	// 	description: 'Volgorde van antwoorden wisselen',
+	// 	value: restData.shuffle_answers,
+	// 	expectedValue: needsShuffle(restData),
+	// 	severity: 'red'
+	// }
+	const shuffleQuestions = {
+		description: 'Vragen opnieuw rangschikken ingesteld',
+		value: restData.quiz_settings.shuffle_questions,
+		expectedValue: false,
 		severity: 'red'
 	}
 	const hasAccessCode = {
 		description: 'Toegangscode ingesteld',
-		value: restData.has_access_code,
+		value: restData.quiz_settings.require_student_access_code,
 		expectedValue: true,
 		severity: 'red'
 	}
 	const ipFilter = {
 		description: 'IP filter',
-		value: restData.ip_filter,
-		expectedValue: null,
+		value: restData.quiz_settings.filter_ip_address,
+		expectedValue: false,
 		severity: 'red'
 	}
-	const respSettings = {
-		description: 'Lockdown Browser instellingen',
-		value: '?',
-		expectedValue: ''
+	const hasSprintInstructies = {
+		description: 'Sprint instructie aanwezig',
+		value: itemsData[0].entry_type === 'Stimulus' && itemsData[0].entry.title === 'Sprint',
+		expectedValue: true,
+		severity: 'orange'
 	}
-	const isMIT = () => {
-		return graphqlData.course.account.name.includes('Examencursussen')
+	const laatsteVraag = {
+		description: 'Verwittiging laatste vraag aanwezig',
+		value: itemsData[itemsData.length - 1].entry_type === 'Stimulus' && itemsData[itemsData.length - 1].entry.title === "Laatste vraag",
+		expectedValue: true,
+		severity: 'orange'
 	}
+	// const isMIT = () => {
+	// 	return graphqlData.course.account.name.includes('Examencursussen')
+	// }
 	
 	const tableBody = `<tbody>
 		<tr class="hover-container"><td>${ coursePublished.description }</td><td>${ coursePublished.value === 'available' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(coursePublished) }">${ coursePublished.value === coursePublished.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Zorg dat je cursus tijdig gepubliceerd is.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Zorg dat je toets tijdig gepubliceerd is.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ pointsPossible.description }</td><td>${ pointsPossible.value }</td><td style="background-color:${ pointsPossible.value === 0 ? 'red' : 'orange' }">${ pointsPossible.value === 0 ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of het aantal punten correct is.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ shuffleAnswers.value === shuffleAnswers.expectedValue ? 'green' : 'orange' }">${ shuffleAnswers.value === shuffleAnswers.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als je toets meerkeuzevragen vragen bevat, is het aangeraden om de instelling 'Volgorde van antwoorden wisselen' aan te vinken.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== null ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Deze vink je in de instellingen van de toets altijd uit.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === -1 ? 'onbeperkt' : allowedAttempts.value }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Voor een examen stellen we standaard maximum 1 poging in.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ shuffleQuestions.description }</td><td>${ shuffleQuestions.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'green' : 'orange' }">${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>We raden af om de instelling 'Vragen opnieuw rangschikken' aan te vinken.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== false ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Deze vink je in de instellingen van de toets altijd uit.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ rowColor(isInModule) }">${ isInModule.value === isInModule.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>SchoolYear werkt niet met toetsen die als module-item aan een module werden toegevoegd. Zet in de module een link naar de toets.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === false ? 'meer dan 1' : 1 }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Voor een examen stellen we standaard maximum 1 poging in.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij examens toon je nooit meteen de juiste antwoorden. Deze maak je pas zichtbaar nadat de punten officieel gecommuniceerd zijn.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Heb je ervoor gekozen om je vragen een voor een aan te bieden en is dit in lijn met eventuele opleidingsspecifieke afspraken?Op <a href="https://canvas.kdg.be/courses/24981/pages/waar-vind-ik-de-exameninstructies-en-handleidingen-voor-mijn-opleiding" target="_blank">deze pagina</a> kan je eventuele opleidingsspecifieke afspraken nog eens checken.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ lockdownBrowser.description }</td><td>${ lockdownBrowser.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(lockdownBrowser) }">${ lockdownBrowser.value === lockdownBrowser.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij gesloten boek examens moet de lockdownbrowser ingeschakeld zijn. Hoe je dat doet, vind je op <a href="https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor" target="_blank">deze pagina</a>.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ monitor.description }</td><td>${ monitor.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(monitor) }">${ monitor.value === monitor.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Enkel als je een bericht hebt ontvangen dat je een student hebt die het examen van thuis uit mag afleggen, kan je de monitor inschakelen. 
-		Heb je zo'n bericht gekregen? Schakel de monitor in. 
-		Heb je geen bericht ontvangen? Zorg dat de monitor is uitgeschakeld. Meer info vind je op: <a href="https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor" target="_blank">https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor</a>.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ questionTypes.description }</td><td>${ questionTypes.value }</td><td style="background-color:orange";>OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>${ questionTypes.value !== '' ? 'Controleer of al soorten examenvragen die je in je examen wil opnemen hier vermeld staan.' : 'Er zitten nog geen vragen in de toets. Voeg deze zeker nog toe! Als je met toetsbanken werkt: controleer of de linken naar de banken goed gelegd zijn.' }</p></aside></td></tr>
-		<tr class="hover-container"><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of hier het juiste aantal vragen is weergegeven.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === availableUntil.expectedValue ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte einddatum en -tijd in. Controleer zeker of je de beschikbaarheid 1 uur langer dan de duurtijd van het examen hebt ingesteld.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je moet voor je examen altijd een toegangscode instellen via de Lockdown Browser. Deze code wordt dan automatisch in de toetsinstellingen ingevuld en moet je niet meer wijzigen. Als je een openboek examen hebt - dus zonder lockdown browser - kan je de toegangscode rechtsreeks in de instellingen van de toets ingeven.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value === null ? 'Nee' : 'Ja' }</td><td style="background-color:${ ipFilter.value === null ? 'green' : 'red' }">${ ipFilter.value === null ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
-		${ !isMIT() ? '' : `<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value }</td><td style="background-color:${ isInModule.value === 'Nee' ? 'red' : 'orange' }">${ isInModule.value === 'Nee' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of dit inderdaad de module is waarin de toets moet zitten. </p></aside></td></tr` }
-		${ !lockdownBrowser.value ? '' : `<tr class="hover-container"><td>${ respSettings.description }</td><td>${ respSettings.value }</td><td style="background-color: orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Dit tool kan de instellingen van de Lockdown Browser niet automatisch checken. Kijk ze zeker nog eens na. <a href="https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor#LDBmonitor" target="_blank">Hier</a> vind je de juiste instellingen.</p></aside></td></tr>` }
+		<tr class="hover-container"><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === 'question' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Heb je ervoor gekozen om je vragen een voor een aan te bieden en is dit in lijn met eventuele opleidingsspecifieke afspraken?Op <a href="https://canvas.kdg.be/courses/24981/pages/waar-vind-ik-de-exameninstructies-en-handleidingen-voor-mijn-opleiding" target="_blank">deze pagina</a> kan je eventuele opleidingsspecifieke afspraken nog eens checken.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ schoolYear.description }</td><td>${ schoolYear.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(schoolYear) }">${ schoolYear.value === schoolYear.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij gesloten boek examens moet Schoolyear ingeschakeld zijn. Hoe je dat doet, vind je op <a href="https://canvas.kdg.be/courses/24981/pages/digitaal-examen-via-klassieke-canvastoets-met-respondus-lockdown-browser-en-slash-of-monitor" target="_blank">deze pagina</a>.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ availableFrom.description }</td><td>${ availableFrom.value }</td><td style="background-color:${ dateRowColor(availableFrom) }">${ availableFrom.value === '' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte begindatum en -tijd in.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === '' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte einddatum en -tijd in. Controleer zeker of je de beschikbaarheid 1 uur langer dan de duurtijd van het examen hebt ingesteld.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je moet voor je examen altijd een toegangscode instellen via de SchoolYear widget. Deze code wordt dan automatisch in de toetsinstellingen ingevuld en moet je niet meer wijzigen. Als je een openboek examen hebt - dus zonder SchoolYear - kan je de toegangscode rechtsreeks in de instellingen van de toets ingeven.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ ipFilter.value === false ? 'green' : 'red' }">${ ipFilter.value === false ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
+		<tr class="hover-container"><td>${ hasSprintInstructies.description }</td><td>${ hasSprintInstructies.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ hasSprintInstructies.value === false ? 'orange' : 'green' }">${ hasSprintInstructies.value === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toets moet als eerste vraag een tekstvraag bevatten met een link naar de Sprintomgeving voor studenten met een bijzonder statuut.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ laatsteVraag.description }</td><td>${ laatsteVraag.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ laatsteVraag.value === false ? 'orange' : 'green' }">${ laatsteVraag.value === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toets moet als laatste vraag een tekstvraag bevatten met de melding dat dit de laatste vraag is.</p></aside></td></tr>
 		</tbody>
 	`
 	const tableEnd = `</table>
