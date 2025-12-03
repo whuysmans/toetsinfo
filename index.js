@@ -154,6 +154,18 @@ app.get('/check', [
 
 } )
 
+const countQuestions = ( items ) => {
+	let counter = 0
+	items.forEach((item) => {
+		if (item.entry_type === 'Bank') {
+			counter += item.entry.entry_count
+		} else {
+			counter++
+		}
+	})
+	return counter
+}
+
 const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) => {
 	let html = `<html>
 					<head>
@@ -179,7 +191,7 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		description: 'Een vraag per keer',
 		value: restData.quiz_settings.one_at_a_time_type,
 		expectedValue: 'question',
-		severity: 'orange' 
+		severity: 'red' 
 	}
 	const timeLimit = {
 		description: 'Tijdslimiet',
@@ -241,12 +253,12 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		expectedValue: false,
 		severity: 'red'
 	}
-	// const questionCount = {
-	// 	description: 'Aantal vragen',
-	// 	value: restData.question_count,
-	// 	expectedValue: 0,
-	// 	severity: 'orange'
-	// }
+	const questionCount = {
+		description: 'Aantal vragen',
+		value: countQuestions(itemsData) - 2,
+		expectedValue: 2,
+		severity: 'orange'
+	}
 	const pointsPossible = {
 		description: 'Aantal punten',
 		value: restData.points_possible,
@@ -321,13 +333,13 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		${ linkInModuleOutput() }
 		<tr class="hover-container"><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === false ? 'meer dan 1' : 1 }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Voor een examen stellen we standaard maximum 1 poging in.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij examens toon je nooit meteen de juiste antwoorden. Deze maak je pas zichtbaar nadat de punten officieel gecommuniceerd zijn.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === 'question' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Heb je ervoor gekozen om je vragen een voor een aan te bieden en is dit in lijn met eventuele opleidingsspecifieke afspraken?Op <a href="https://canvas.kdg.be/courses/24981/pages/waar-vind-ik-de-exameninstructies-en-handleidingen-voor-mijn-opleiding" target="_blank">deze pagina</a> kan je eventuele opleidingsspecifieke afspraken nog eens checken.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === 'question' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'NOK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De algemene afspraak is om de vragen 1 voor 1 aan te bieden.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of hier het juiste aantal vragen is weergegeven.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ schoolYear.description }</td><td>${ schoolYear.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ schoolYear.value === true ? 'orange' : 'red' }">${ schoolYear.value === schoolYear.expectedValue ? 'OK?' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij gesloten boek examens moet Schoolyear ingeschakeld zijn. Hoe je dat doet, vind je op <a href="https://canvas.kdg.be/courses/24981/pages/nieuw-aj2526-digitaal-examen-via-nieuwe-canvastoets?module_item_id=1247938" target="_blank">deze pagina</a>. Deze tool kan de SchoolYear instellingen niet uitlezen, kijk ze dus best nog eens manueel na.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ availableFrom.description }</td><td>${ availableFrom.value }</td><td style="background-color:${ dateRowColor(availableFrom) }">${ availableFrom.value === '' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte begindatum en -tijd in.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === '' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte einddatum en -tijd in. Controleer zeker of je de beschikbaarheid 1 uur langer dan de duurtijd van het examen hebt ingesteld.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je moet voor je examen altijd een toegangscode instellen via de SchoolYear widget. Deze code wordt dan automatisch in de toetsinstellingen ingevuld en moet je niet meer wijzigen. Als je een openboek examen hebt - dus zonder SchoolYear - kan je de toegangscode rechtsreeks in de instellingen van de toets ingeven.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je moet voor je examen altijd een toegangscode instellen via SchoolYear. Ga in je cursus naar SchoolYear en open dan de settings bij de toets. Bij advanced kan je de toegangscode instellen. Deze code wordt dan automatisch in de toetsinstellingen ingevuld en moet je niet meer wijzigen. Als je een openboek examen hebt - dus zonder SchoolYear - kan je de toegangscode rechtsreeks in de instellingen van de toets ingeven.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ ipFilter.value === false ? 'green' : 'red' }">${ ipFilter.value === false ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
-		<tr class="hover-container"><td>${ hasSprintInstructies.description }</td><td>${ hasSprintInstructies.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ hasSprintInstructies.value === false ? 'orange' : 'green' }">${ hasSprintInstructies.value === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toets moet als eerste vraag een tekstvraag bevatten met een link naar de Sprintomgeving voor studenten met een bijzonder statuut.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ laatsteVraag.description }</td><td>${ laatsteVraag.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ laatsteVraag.value === false ? 'orange' : 'green' }">${ laatsteVraag.value === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toets moet als laatste vraag een tekstvraag bevatten met de melding dat dit de laatste vraag is.</p></aside></td></tr>
 		</tbody>
 	`
