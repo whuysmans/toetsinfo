@@ -111,11 +111,15 @@ app.get('/check', [
 					nodes {
 						name
 						published
-						moduleItemsConnection {
-							nodes {
-								title
-								published
-								moduleItemUrl
+						moduleItems {
+							title
+							content {
+								... on Assignment {
+									id
+									name
+									htmlUrl
+									type
+								}
 							}
 						}
 					}
@@ -265,12 +269,12 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		expectedValue: 0,
 		severity: 'orange'
 	}
-	// const shuffleAnswers = {
-	// 	description: 'Volgorde van antwoorden wisselen',
-	// 	value: restData.shuffle_answers,
-	// 	expectedValue: needsShuffle(restData),
-	// 	severity: 'red'
-	// }
+	const shuffleAnswers = {
+		description: 'Volgorde van antwoorden wisselen',
+		value: restData.shuffle_answers,
+		expectedValue: needsShuffle(restData),
+		severity: 'red'
+	}
 	const shuffleQuestions = {
 		description: 'Vragen opnieuw rangschikken ingesteld',
 		value: restData.quiz_settings.shuffle_questions,
@@ -301,21 +305,29 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		expectedValue: true,
 		severity: 'orange'
 	}
-	const linkInModule = {
-		description: 'URL naar de toets staat in module',
+	const toetsInModule = {
+		description: 'De toets staat in een module',
 		value: assignmentModule && Object.keys(assignmentModule).length !== 0,
 		expectedValue: true,
 		severity: 'orange'
 	}
 
-	const linkInModuleOutput = () => {
-		if ( linkInModule.value === true ) {
-			return `<tr class="hover-container"><td>${ linkInModule.description }</td><td>${ linkInModule.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ linkInModule.value === false ? 'red' : 'orange' }">${ linkInModule.value === true ? 'OK?' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>${ linkInModule.value === false ? 'We bevelen aan om in de link naar de toets in de examenmodule van de juiste periode te zetten.' : `De link naar de toets staat in deze module: ${ assignmentModule.name }`}</p></aside></td></tr>	
-					<tr class="hover-container"><td>Module met toetslink gepubliceerd</td><td>${ assignmentModule.published === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ assignmentModule.published === false ? 'red' : 'green' }">${ assignmentModule.published === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De module met de toetslink moet gepubliceerd zijn voor het examen.</p></aside></td></tr>
-					<tr class="hover-container"><td>Toetslink gepubliceerd</td><td>${ assignmentModule.moduleItemsConnection.nodes[0].published === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ assignmentModule.moduleItemsConnection.nodes[0].published === false ? 'red' : 'green' }">${ assignmentModule.moduleItemsConnection.nodes[0].published === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toetslink moet gepubliceerd zijn.</p></aside></td></tr>
+	// const shuffleAnswersOutput = () => {
+	// 	if ( needsShuffle( restData ) ) {
+	// 		return `<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ shuffleAnswers.value === shuffleAnswers.expectedValue ? 'green' : 'orange' }">${ shuffleAnswers.value === shuffleAnswers.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als er meerkeuze- of meerantwoord vragen zijn, moet deze optie aan staan.</p></aside></td></tr>`
+	// 	} else {
+	// 		return ''
+	// 	}
+	// }
+
+	const toetsInModuleOutput = () => {
+		if ( toetsInModule.value === true ) {
+			return `<tr class="hover-container"><td>${ toetsInModule.description }</td><td>${ toetsInModule.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ toetsInModule.value === false ? 'red' : 'orange' }">${ toetsInModule.value === true ? 'OK?' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>${ toetsInModule.value === false ? 'We bevelen aan om de toets in de examenmodule van de juiste periode te zetten.' : `De toets staat in deze module: ${ assignmentModule.name }`}</p></aside></td></tr>	
+					<tr class="hover-container"><td>Module met toets gepubliceerd</td><td>${ assignmentModule.published === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ assignmentModule.published === false ? 'red' : 'green' }">${ assignmentModule.published === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De module met de toets moet gepubliceerd zijn voor het examen.</p></aside></td></tr>
+					<tr class="hover-container"><td>ModuleItem met de toets gepubliceerd</td><td>${ assignmentModule.moduleItems[0].published === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ assignmentModule.moduleItems[0].published === false ? 'red' : 'green' }">${ assignmentModule.moduleItems[0].published === false ? 'NOK' : 'OK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Het moduleitem met de toets moet gepubliceerd zijn.</p></aside></td></tr>
 					`
 		} else {
-			return ''
+			return `<tr class="hover-container"><td>${ toetsInModule.description }</td><td>Nee</td><td style="background-color:orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>We bevelen aan om de toets in de examenmodule van de juiste periode te zetten.</p></aside></td></tr>`
 		}
 
 	}
@@ -328,15 +340,15 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		<tr class="hover-container"><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Zorg dat je toets tijdig gepubliceerd is.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ pointsPossible.description }</td><td>${ pointsPossible.value }</td><td style="background-color:${ pointsPossible.value === 0 ? 'red' : 'orange' }">${ pointsPossible.value === 0 ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of het aantal punten correct is.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ shuffleQuestions.description }</td><td>${ shuffleQuestions.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'green' : 'orange' }">${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>We raden af om de instelling 'Vragen opnieuw rangschikken' aan te vinken.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== false ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Deze vink je in de instellingen van de toets altijd uit.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ isInModule.description }</td><td>${ isInModule.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ rowColor(isInModule) }">${ isInModule.value === isInModule.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>SchoolYear werkt niet met toetsen die als module-item aan een module werden toegevoegd. Zet in de module een link naar de toets.</p></aside></td></tr>
-		${ linkInModuleOutput() }
+		<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value === true ? 'Ja' : 'Nee' }</td><td style="background-color: orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als er meerkeuze- of meerantwoord vragen zijn, moet deze optie aan staan.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== false ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Deze vink je in de instellingen van de toets altijd uit.</p></aside></td></tr>	
+		${ toetsInModuleOutput() }
 		<tr class="hover-container"><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === false ? 'meer dan 1' : 1 }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Voor een examen stellen we standaard maximum 1 poging in.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ showCorrect.description }</td><td>${ showCorrect.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(showCorrect) }">${ showCorrect.value === showCorrect.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij examens toon je nooit meteen de juiste antwoorden. Deze maak je pas zichtbaar nadat de punten officieel gecommuniceerd zijn.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ oneQuestionAtATime.description }</td><td>${ oneQuestionAtATime.value === 'question' ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(oneQuestionAtATime) }">${ oneQuestionAtATime.value === oneQuestionAtATime.expectedValue ? 'OK' : 'NOK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De algemene afspraak is om de vragen 1 voor 1 aan te bieden.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ questionCount.description }</td><td>${ questionCount.value }</td><td style="background-color:orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of hier het juiste aantal vragen is weergegeven.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ schoolYear.description }</td><td>${ schoolYear.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ schoolYear.value === true ? 'orange' : 'red' }">${ schoolYear.value === schoolYear.expectedValue ? 'OK?' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Bij gesloten boek examens moet Schoolyear ingeschakeld zijn. Hoe je dat doet, vind je op <a href="https://canvas.kdg.be/courses/24981/pages/nieuw-aj2526-digitaal-examen-via-nieuwe-canvastoets?module_item_id=1247938" target="_blank">deze pagina</a>. Deze tool kan de SchoolYear instellingen niet uitlezen, kijk ze dus best nog eens manueel na.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ availableFrom.description }</td><td>${ availableFrom.value }</td><td style="background-color:${ dateRowColor(availableFrom) }">${ availableFrom.value === '' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte begindatum en -tijd in.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ availableFrom.description }</td><td>${ availableFrom.value }</td><td style="background-color:${ dateRowColor(availableFrom) }">${ availableFrom.value === '' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte begindatum en -tijd in. Opgelet! De toets moet 15 minuten voor de starttijd van het examen openstaan.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ availableUntil.description }</td><td>${ availableUntil.value }</td><td style="background-color:${ dateRowColor(availableUntil) }">${ availableUntil.value === '' ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Stel de correcte einddatum en -tijd in. Controleer zeker of je de beschikbaarheid 1 uur langer dan de duurtijd van het examen hebt ingesteld.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je moet voor je examen altijd een toegangscode instellen via SchoolYear. Ga in je cursus naar SchoolYear en open dan de settings bij de toets. Bij advanced kan je de toegangscode instellen. Als je een openboek examen hebt - dus zonder SchoolYear - kan je de toegangscode rechtsreeks in de instellingen van de toets ingeven.</p></aside></td></tr>
 		<tr class="hover-container"><td>Uploaden documenten uitgeschakeld?</td><td>?</td><td style="background-color:orange">OK ?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze tool kan deze instelling nog niet automatisch checken. Controleer daarom zeker dat de mogelijkheid om documenten op te laden zeker uitgeschakeld is.</p></aside></td></tr>	
@@ -407,7 +419,9 @@ app.get( '/logout', async ( req, res ) => {
 } )
 
 const findAssignmentModule = ( graphqlData, url ) => {
-	return graphqlData.course.modulesConnection.nodes.find((module) => module.moduleItemsConnection.nodes.find((item) => item.moduleItemUrl === url))
+	// console.log(graphqlData.course.modulesConnection.nodes[0].moduleItems[0].content)	
+	console.log(graphqlData.course.modulesConnection.nodes[0].moduleItems)
+	return graphqlData.course.modulesConnection.nodes.find((module) => module.moduleItems.find((item) => item.content.htmlUrl === url))
 }
 
 // on app creation, set the oauth2 parameters
