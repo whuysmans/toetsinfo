@@ -77,7 +77,7 @@ app.get('/check', [
 	const courseID = splittedURLArray[4]
 	const quizID = splittedURLArray[6]
 	const restAPIURL = `${ process.env.SCHOOL }/api/quiz/v1/courses/${ courseID }/quizzes/${ quizID }`
-	const itemsAPIURL = `${ process.env.SCHOOL }/api/quiz/v1/courses/${ courseID }/quizzes/${ quizID }/items`
+	const itemsAPIURL = `${ process.env.SCHOOL }/api/quiz/v1/courses/${ courseID }/quizzes/${ quizID }/items?per_page=100`
 	const graphQLURL = `${ process.env.SCHOOL }/api/graphql`
 	console.log(restAPIURL)
 
@@ -145,6 +145,9 @@ app.get('/check', [
 				variables
 			)
 			console.log( JSON.stringify( graphResp ) )
+			console.log(itemsResp.data.length)
+			console.log(itemsResp.data[itemsResp.data.length - 1])
+			console.log(itemsResp.data[itemsResp.data.length - 1].entry)
 			const resultHTML = buildResultTable( restResp.data, graphResp, quizURL, quizID, itemsResp.data )
 			res.send( resultHTML )
 		} catch( graphqlErr ) {
@@ -271,7 +274,7 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 	}
 	const shuffleAnswers = {
 		description: 'Volgorde van antwoorden wisselen',
-		value: restData.shuffle_answers,
+		value: restData.quiz_settings.shuffle_answers,
 		expectedValue: needsShuffle(restData),
 		severity: 'red'
 	}
@@ -340,7 +343,7 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		<tr class="hover-container"><td>${ published.description }</td><td>${ published.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(published) }">${ published.value === published.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Zorg dat je toets tijdig gepubliceerd is.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ pointsPossible.description }</td><td>${ pointsPossible.value }</td><td style="background-color:${ pointsPossible.value === 0 ? 'red' : 'orange' }">${ pointsPossible.value === 0 ? 'NOK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Controleer of het aantal punten correct is.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ shuffleQuestions.description }</td><td>${ shuffleQuestions.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'green' : 'orange' }">${ shuffleQuestions.value === shuffleQuestions.expectedValue ? 'OK' : 'OK?' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>We raden af om de instelling 'Vragen opnieuw rangschikken' aan te vinken.</p></aside></td></tr>
-		<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value === true ? 'Ja' : 'Nee' }</td><td style="background-color: orange">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als er meerkeuze- of meerantwoord vragen zijn, moet deze optie aan staan.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ shuffleAnswers.description }</td><td>${ shuffleAnswers.value === true ? 'Ja' : 'Nee' }</td><td style="background-color: ${ shuffleAnswers.value === true ? 'green' : 'oragne' }">OK?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Als er meerkeuze- of meerantwoord vragen zijn, moet deze optie aan staan.</p></aside></td></tr>
 		<tr class="hover-container"><td>${ timeLimit.description }</td><td>${ timeLimit.value !== false ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(timeLimit) }">${ timeLimit.value === timeLimit.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Er wordt nooit met een tijdslimiet gewerkt. Deze vink je in de instellingen van de toets altijd uit.</p></aside></td></tr>	
 		${ toetsInModuleOutput() }
 		<tr class="hover-container"><td>${ allowedAttempts.description }</td><td>${ allowedAttempts.value === false ? 'meer dan 1' : 1 }</td><td style="background-color:${ rowColor(allowedAttempts) }">${ allowedAttempts.value === allowedAttempts.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Voor een examen stellen we standaard maximum 1 poging in.</p></aside></td></tr>
@@ -353,7 +356,7 @@ const buildResultTable = ( restData, graphqlData, quizURL, quizID, itemsData ) =
 		<tr class="hover-container"><td>${ hasAccessCode.description }</td><td>${ hasAccessCode.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ rowColor(hasAccessCode) }">${ hasAccessCode.value === hasAccessCode.expectedValue ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Je moet voor je examen altijd een toegangscode instellen via SchoolYear. Ga in je cursus naar SchoolYear en open dan de settings bij de toets. Bij advanced kan je de toegangscode instellen. Als je een openboek examen hebt - dus zonder SchoolYear - kan je de toegangscode rechtsreeks in de instellingen van de toets ingeven.</p></aside></td></tr>
 		<tr class="hover-container"><td>Uploaden documenten uitgeschakeld?</td><td>?</td><td style="background-color:orange">OK ?</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze tool kan deze instelling nog niet automatisch checken. Controleer daarom zeker dat de mogelijkheid om documenten op te laden zeker uitgeschakeld is.</p></aside></td></tr>	
 		<tr class="hover-container"><td>${ ipFilter.description }</td><td>${ ipFilter.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ ipFilter.value === false ? 'green' : 'red' }">${ ipFilter.value === false ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>Deze instelling moet zeker uitgevinkt staan!</p></aside></td></tr>
-		<tr class="hover-container"><td>${ laatsteVraag.description }</td><td>${ laatsteVraag.value === false ? 'Nee' : 'Ja' }</td><td style="background-color:${ laatsteVraag.value === false ? 'orange' : 'green' }">${ laatsteVraag.value === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toets moet als laatste vraag een tekstvraag bevatten met de melding dat dit de laatste vraag is.</p></aside></td></tr>
+		<tr class="hover-container"><td>${ laatsteVraag.description }</td><td>${ laatsteVraag.value === true ? 'Ja' : 'Nee' }</td><td style="background-color:${ laatsteVraag.value === true ? 'green' : 'orange' }">${ laatsteVraag.value === true ? 'OK' : 'NOK' }</td><td class="hover-target">&#9432;<aside class="hover-popup"><p>De toets moet als laatste vraag een tekstvraag bevatten met de melding dat dit de laatste vraag is.</p></aside></td></tr>
 		</tbody>
 	`
 	const tableEnd = `</table>
