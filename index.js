@@ -86,7 +86,8 @@ app.get('/check', [
 			method: 'GET',
 			url: restAPIURL,
 			headers: {
-				'Authorization': `Bearer ${ token }`
+				'Authorization': `Bearer ${ token }`,
+				'User-Agent': 'ToetsInfo/1.0.0'
 			}
 		})
 		console.log( restResp.data )
@@ -94,13 +95,15 @@ app.get('/check', [
 			method: 'GET',
 			url: itemsAPIURL,
 			headers: {
-				'Authorization': `Bearer ${ token }`
+				'Authorization': `Bearer ${ token }`,
+				'User-Agent': 'ToetsInfo/1.0.0'
 			}	
 		})
 		console.log ( itemsResp.data )
 		const graphQLClient = new GraphQLClient( graphQLURL, {
 			headers: {
-				Authorization: `Bearer ${ token }`
+				Authorization: `Bearer ${ token }`,
+				'User-Agent': 'ToetsInfo/1.0.0'
 			}
 		} )
 		const query = `
